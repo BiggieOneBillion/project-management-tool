@@ -1,0 +1,165 @@
+using Microsoft.EntityFrameworkCore;
+using Project.CORE.Entities;
+using Project.CORE.Interfaces;
+using Project.INFRASTRUCTURE.Data;
+
+namespace Project.INFRASTRUCTURE.Repositories;
+
+public class Repository<T> : IRepository<T> where T : class
+{
+    protected readonly ApplicationDbContext _context;
+    protected readonly DbSet<T> _dbSet;
+    
+    public Repository(ApplicationDbContext context)
+    {
+        _context = context;
+        _dbSet = context.Set<T>();
+    }
+    
+    public virtual async Task<T?> GetByIdAsync(string id)
+    {
+        return await _dbSet.FindAsync(id);
+    }
+    
+    public virtual async Task<IEnumerable<T>> GetAllAsync()
+    {
+        return await _dbSet.ToListAsync();
+    }
+    
+    public virtual async Task<T> AddAsync(T entity)
+    {
+        await _dbSet.AddAsync(entity);
+        await _context.SaveChangesAsync();
+        return entity;
+    }
+    
+    public virtual async Task UpdateAsync(T entity)
+    {
+        _dbSet.Update(entity);
+        await _context.SaveChangesAsync();
+    }
+    
+    public virtual async Task DeleteAsync(string id)
+    {
+        var entity = await GetByIdAsync(id);
+        if (entity != null)
+        {
+            _dbSet.Remove(entity);
+            await _context.SaveChangesAsync();
+        }
+    }
+}
+
+public class WorkspaceRepository : Repository<Workspace>, IWorkspaceRepository
+{
+    public WorkspaceRepository(ApplicationDbContext context) : base(context) { }
+    
+    public async Task<IEnumerable<Workspace>> GetUserWorkspacesAsync(string userId)
+    {
+        return await _context.Workspaces
+            .Include(w => w.Owner)
+            .Include(w => w.Members)
+                .ThenInclude(m => m.User)
+            .Where(w => w.OwnerId == userId || w.Members.Any(m => m.UserId == userId))
+            .ToListAsync();
+    }
+    
+    public async Task<Workspace?> GetBySlugAsync(string slug)
+    {
+        return await _context.Workspaces
+            .Include(w => w.Owner)
+            .FirstOrDefaultAsync(w => w.Slug == slug);
+    }
+    
+    public async Task<Workspace?> GetWithMembersAsync(string id)
+    {
+        return await _context.Workspaces
+            .Include(w => w.Owner)
+            .Include(w => w.Members)
+                .ThenInclude(m => m.User)
+            .FirstOrDefaultAsync(w => w.Id == id);
+    }
+    
+    public async Task<Workspace?> GetWithProjectsAsync(string id)
+    {
+        return await _context.Workspaces
+            .Include(w => w.Owner)
+            .Include(w => w.Projects)
+            .FirstOrDefaultAsync(w => w.Id == id);
+    }
+}
+
+public class ProjectRepository : Repository<ProjectEntity>, IProjectRepository
+{
+    public ProjectRepository(ApplicationDbContext context) : base(context) { }
+    
+    public async Task<IEnumerable<ProjectEntity>> GetWorkspaceProjectsAsync(string workspaceId)
+    {
+        return await _context.Projects
+            .Include(p => p.TeamLead)
+            .Include(p => p.Members)
+                .ThenInclude(m => m.User)
+            .Where(p => p.WorkspaceId == workspaceId)
+            .ToListAsync();
+    }
+    
+    public async Task<ProjectEntity?> GetWithTasksAsync(string id)
+    {
+        return await _context.Projects
+            .Include(p => p.TeamLead)
+            .Include(p => p.Tasks)
+                .ThenInclude(t => t.Assignee)
+            .FirstOrDefaultAsync(p => p.Id == id);
+    }
+    
+    public async Task<ProjectEntity?> GetWithMembersAsync(string id)
+    {
+        return await _context.Projects
+            .Include(p => p.TeamLead)
+            .Include(p => p.Members)
+                .ThenInclude(m => m.User)
+            .FirstOrDefaultAsync(p => p.Id == id);
+    }
+}
+
+public class TaskRepository : Repository<TaskEntity>, ITaskRepository
+{
+    public TaskRepository(ApplicationDbContext context) : base(context) { }
+    
+    public async Task<IEnumerable<TaskEntity>> GetProjectTasksAsync(string projectId)
+    {
+        return await _context.Tasks
+            .Include(t => t.Assignee)
+            .Where(t => t.ProjectId == projectId)
+            .ToListAsync();
+    }
+    
+    public async Task<IEnumerable<TaskEntity>> GetUserTasksAsync(string userId)
+    {
+        return await _context.Tasks
+            .Include(t => t.Project)
+            .Include(t => t.Assignee)
+            .Where(t => t.AssigneeId == userId)
+            .ToListAsync();
+    }
+    
+    public async Task<TaskEntity?> GetWithCommentsAsync(string id)
+    {
+        return await _context.Tasks
+            .Include(t => t.Assignee)
+            .Include(t => t.Comments)
+                .ThenInclude(c => c.User)
+            .FirstOrDefaultAsync(t => t.Id == id);
+    }
+}
+
+public class UserRepository : Repository<User>, IUserRepository
+{
+    public UserRepository(ApplicationDbContext context) : base(context) { }
+    
+    public async Task<User?> GetByEmailAsync(string email)
+    {
+        return await _context.Users
+            .FirstOrDefaultAsync(u => u.Email == email);
+    }
+}
