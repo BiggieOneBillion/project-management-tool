@@ -1,9 +1,7 @@
-using AutoMapper;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Project.APPLICATION.DTOs.Project;
-using Project.CORE.Entities;
-using Project.CORE.Interfaces;
-using Project.CORE.ValueObjects;
+using Project.APPLICATION.Commands.Project;
+using Project.APPLICATION.Queries.Project;
 
 namespace Project.API.Controllers;
 
@@ -11,18 +9,11 @@ namespace Project.API.Controllers;
 [Route("api/v1/[controller]")]
 public class ProjectsController : ControllerBase
 {
-    private readonly IProjectRepository _projectRepository;
-    private readonly IMapper _mapper;
-    private readonly ILogger<ProjectsController> _logger;
+    private readonly IMediator _mediator;
     
-    public ProjectsController(
-        IProjectRepository projectRepository,
-        IMapper mapper,
-        ILogger<ProjectsController> logger)
+    public ProjectsController(IMediator mediator)
     {
-        _projectRepository = projectRepository;
-        _mapper = mapper;
-        _logger = logger;
+        _mediator = mediator;
     }
     
     [HttpGet]
@@ -30,130 +21,76 @@ public class ProjectsController : ControllerBase
     {
         try
         {
-            IEnumerable<ProjectEntity> projects;
-            
             if (!string.IsNullOrEmpty(workspaceId))
             {
-                projects = await _projectRepository.GetWorkspaceProjectsAsync(workspaceId);
+                var query = new GetWorkspaceProjectsQuery(workspaceId);
+                var projects = await _mediator.Send(query);
+                return Ok(new { success = true, data = projects });
             }
             else
             {
-                projects = await _projectRepository.GetAllAsync();
+                var query = new GetAllProjectsQuery();
+                var projects = await _mediator.Send(query);
+                return Ok(new { success = true, data = projects });
             }
-            
-            var projectDtos = _mapper.Map<List<ProjectDto>>(projects);
-            return Ok(new { success = true, data = projectDtos });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting projects");
-            return StatusCode(500, new { success = false, message = "An error occurred" });
+            return StatusCode(500, new { success = false, message = ex.Message });
         }
     }
     
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(string id, [FromQuery] bool includeTasks = false, [FromQuery] bool includeMembers = false)
+    public async Task<IActionResult> GetById(
+        string id,
+        [FromQuery] bool includeTasks = false,
+        [FromQuery] bool includeMembers = false)
     {
         try
         {
-            ProjectEntity? project;
-            
-            if (includeTasks)
-            {
-                project = await _projectRepository.GetWithTasksAsync(id);
-            }
-            else if (includeMembers)
-            {
-                project = await _projectRepository.GetWithMembersAsync(id);
-            }
-            else
-            {
-                project = await _projectRepository.GetByIdAsync(id);
-            }
+            var query = new GetProjectByIdQuery(id, includeTasks, includeMembers);
+            var project = await _mediator.Send(query);
             
             if (project == null)
                 return NotFound(new { success = false, message = "Project not found" });
             
-            var projectDto = includeTasks || includeMembers 
-                ? _mapper.Map<ProjectDetailDto>(project)
-                : (object)_mapper.Map<ProjectDto>(project);
-            
-            return Ok(new { success = true, data = projectDto });
+            return Ok(new { success = true, data = project });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting project {Id}", id);
-            return StatusCode(500, new { success = false, message = "An error occurred" });
+            return StatusCode(500, new { success = false, message = ex.Message });
         }
     }
     
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateProjectDto request)
+    public async Task<IActionResult> Create([FromBody] CreateProjectCommand command)
     {
         try
         {
-            var project = new ProjectEntity
-            {
-                Id = Guid.NewGuid().ToString(),
-                Name = request.Name,
-                Description = request.Description,
-                Priority = Enum.Parse<Priority>(request.Priority),
-                Status = Enum.Parse<ProjectStatus>(request.Status),
-                StartDate = request.StartDate,
-                EndDate = request.EndDate,
-                TeamLeadId = request.TeamLeadId,
-                WorkspaceId = request.WorkspaceId,
-                Progress = 0,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            
-            var created = await _projectRepository.AddAsync(project);
-            var projectDto = _mapper.Map<ProjectDto>(created);
-            
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, 
-                new { success = true, data = projectDto, message = "Project created successfully" });
+            var project = await _mediator.Send(command);
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = project.Id },
+                new { success = true, data = project, message = "Project created successfully" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating project");
-            return StatusCode(500, new { success = false, message = "An error occurred" });
+            return StatusCode(500, new { success = false, message = ex.Message });
         }
     }
     
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(string id, [FromBody] UpdateProjectDto request)
+    public async Task<IActionResult> Update(string id, [FromBody] UpdateProjectCommand command)
     {
         try
         {
-            var project = await _projectRepository.GetByIdAsync(id);
-            
-            if (project == null)
-                return NotFound(new { success = false, message = "Project not found" });
-            
-            project.Name = request.Name;
-            project.Description = request.Description;
-            project.Priority = Enum.Parse<Priority>(request.Priority);
-            project.Status = Enum.Parse<ProjectStatus>(request.Status);
-            
-            if (request.StartDate.HasValue)
-                project.StartDate = request.StartDate.Value;
-            
-            if (request.EndDate.HasValue)
-                project.EndDate = request.EndDate.Value;
-            
-            if (request.Progress.HasValue)
-                project.Progress = request.Progress.Value;
-            
-            await _projectRepository.UpdateAsync(project);
-            var projectDto = _mapper.Map<ProjectDto>(project);
-            
-            return Ok(new { success = true, data = projectDto, message = "Project updated successfully" });
+            var updateCommand = command with { Id = id };
+            var project = await _mediator.Send(updateCommand);
+            return Ok(new { success = true, data = project, message = "Project updated successfully" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating project {Id}", id);
-            return StatusCode(500, new { success = false, message = "An error occurred" });
+            return StatusCode(500, new { success = false, message = ex.Message });
         }
     }
     
@@ -162,13 +99,13 @@ public class ProjectsController : ControllerBase
     {
         try
         {
-            await _projectRepository.DeleteAsync(id);
-            return NoContent();
+            var command = new DeleteProjectCommand(id);
+            await _mediator.Send(command);
+            return Ok(new { success = true, message = "Project deleted successfully" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting project {Id}", id);
-            return StatusCode(500, new { success = false, message = "An error occurred" });
+            return StatusCode(500, new { success = false, message = ex.Message });
         }
     }
 }

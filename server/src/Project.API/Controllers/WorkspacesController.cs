@@ -1,8 +1,7 @@
-using AutoMapper;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Project.APPLICATION.DTOs.Workspace;
-using Project.CORE.Entities;
-using Project.CORE.Interfaces;
+using Project.APPLICATION.Commands.Workspace;
+using Project.APPLICATION.Queries.Workspace;
 
 namespace Project.API.Controllers;
 
@@ -10,18 +9,11 @@ namespace Project.API.Controllers;
 [Route("api/v1/[controller]")]
 public class WorkspacesController : ControllerBase
 {
-    private readonly IWorkspaceRepository _workspaceRepository;
-    private readonly IMapper _mapper;
-    private readonly ILogger<WorkspacesController> _logger;
+    private readonly IMediator _mediator;
     
-    public WorkspacesController(
-        IWorkspaceRepository workspaceRepository,
-        IMapper mapper,
-        ILogger<WorkspacesController> logger)
+    public WorkspacesController(IMediator mediator)
     {
-        _workspaceRepository = workspaceRepository;
-        _mapper = mapper;
-        _logger = logger;
+        _mediator = mediator;
     }
     
     [HttpGet]
@@ -29,115 +21,77 @@ public class WorkspacesController : ControllerBase
     {
         try
         {
-            IEnumerable<Workspace> workspaces;
-            
             if (!string.IsNullOrEmpty(userId))
             {
-                workspaces = await _workspaceRepository.GetUserWorkspacesAsync(userId);
+                var query = new GetUserWorkspacesQuery(userId);
+                var workspaces = await _mediator.Send(query);
+                return Ok(new { success = true, data = workspaces });
             }
             else
             {
-                workspaces = await _workspaceRepository.GetAllAsync();
+                var query = new GetAllWorkspacesQuery();
+                var workspaces = await _mediator.Send(query);
+                return Ok(new { success = true, data = workspaces });
             }
-            
-            var workspaceDtos = _mapper.Map<List<WorkspaceDto>>(workspaces);
-            return Ok(new { success = true, data = workspaceDtos });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting workspaces");
-            return StatusCode(500, new { success = false, message = "An error occurred" });
+            return StatusCode(500, new { success = false, message = ex.Message });
         }
     }
     
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(string id, [FromQuery] bool includeMembers = false, [FromQuery] bool includeProjects = false)
+    public async Task<IActionResult> GetById(
+        string id,
+        [FromQuery] bool includeMembers = false,
+        [FromQuery] bool includeProjects = false)
     {
         try
         {
-            Workspace? workspace;
-            
-            if (includeMembers)
-            {
-                workspace = await _workspaceRepository.GetWithMembersAsync(id);
-            }
-            else if (includeProjects)
-            {
-                workspace = await _workspaceRepository.GetWithProjectsAsync(id);
-            }
-            else
-            {
-                workspace = await _workspaceRepository.GetByIdAsync(id);
-            }
+            var query = new GetWorkspaceByIdQuery(id, includeMembers, includeProjects);
+            var workspace = await _mediator.Send(query);
             
             if (workspace == null)
                 return NotFound(new { success = false, message = "Workspace not found" });
             
-            var workspaceDto = includeMembers || includeProjects
-                ? _mapper.Map<WorkspaceDetailDto>(workspace)
-                : (object)_mapper.Map<WorkspaceDto>(workspace);
-            
-            return Ok(new { success = true, data = workspaceDto });
+            return Ok(new { success = true, data = workspace });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting workspace {Id}", id);
-            return StatusCode(500, new { success = false, message = "An error occurred" });
+            return StatusCode(500, new { success = false, message = ex.Message });
         }
     }
     
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateWorkspaceDto request)
+    public async Task<IActionResult> Create([FromBody] CreateWorkspaceCommand command)
     {
         try
         {
-            var workspace = new Workspace
-            {
-                Id = Guid.NewGuid().ToString(),
-                Name = request.Name,
-                Slug = request.Slug,
-                Description = request.Description,
-                OwnerId = request.OwnerId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            
-            var created = await _workspaceRepository.AddAsync(workspace);
-            var workspaceDto = _mapper.Map<WorkspaceDto>(created);
-            
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, 
-                new { success = true, data = workspaceDto, message = "Workspace created successfully" });
+            var workspace = await _mediator.Send(command);
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = workspace.Id },
+                new { success = true, data = workspace, message = "Workspace created successfully" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating workspace");
-            return StatusCode(500, new { success = false, message = "An error occurred" });
+            return StatusCode(500, new { success = false, message = ex.Message });
         }
     }
     
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(string id, [FromBody] UpdateWorkspaceDto request)
+    public async Task<IActionResult> Update(string id, [FromBody] UpdateWorkspaceCommand command)
     {
         try
         {
-            var workspace = await _workspaceRepository.GetByIdAsync(id);
-            
-            if (workspace == null)
-                return NotFound(new { success = false, message = "Workspace not found" });
-            
-            workspace.Name = request.Name;
-            workspace.Description = request.Description;
-            workspace.Settings = request.Settings ?? workspace.Settings;
-            
-            await _workspaceRepository.UpdateAsync(workspace);
-            var workspaceDto = _mapper.Map<WorkspaceDto>(workspace);
-            
-            return Ok(new { success = true, data = workspaceDto, message = "Workspace updated successfully" });
+            // Ensure the ID in the route matches the command
+            var updateCommand = command with { Id = id };
+            var workspace = await _mediator.Send(updateCommand);
+            return Ok(new { success = true, data = workspace, message = "Workspace updated successfully" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating workspace {Id}", id);
-            return StatusCode(500, new { success = false, message = "An error occurred" });
+            return StatusCode(500, new { success = false, message = ex.Message });
         }
     }
     
@@ -146,14 +100,13 @@ public class WorkspacesController : ControllerBase
     {
         try
         {
-            await _workspaceRepository.DeleteAsync(id);
-            return NoContent();
+            var command = new DeleteWorkspaceCommand(id);
+            await _mediator.Send(command);
+            return Ok(new { success = true, message = "Workspace deleted successfully" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting workspace {Id}", id);
-            return StatusCode(500, new { success = false, message = "An error occurred" });
+            return StatusCode(500, new { success = false, message = ex.Message });
         }
     }
 }
-

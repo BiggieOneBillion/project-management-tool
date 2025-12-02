@@ -1,27 +1,19 @@
-using AutoMapper;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Project.APPLICATION.DTOs.Comment;
-using Project.CORE.Entities;
-using Project.CORE.Interfaces;
+using Project.APPLICATION.Commands.Comment;
+using Project.APPLICATION.Queries.Comment;
 
 namespace Project.API.Controllers;
 
 [ApiController]
-[Route("api/v1/tasks/{taskId}/comments")]
+[Route("api/v1/tasks/{taskId}/[controller]")]
 public class CommentsController : ControllerBase
 {
-    private readonly IRepository<Comment> _commentRepository;
-    private readonly IMapper _mapper;
-    private readonly ILogger<CommentsController> _logger;
+    private readonly IMediator _mediator;
     
-    public CommentsController(
-        IRepository<Comment> commentRepository,
-        IMapper mapper,
-        ILogger<CommentsController> logger)
+    public CommentsController(IMediator mediator)
     {
-        _commentRepository = commentRepository;
-        _mapper = mapper;
-        _logger = logger;
+        _mediator = mediator;
     }
     
     [HttpGet]
@@ -29,71 +21,44 @@ public class CommentsController : ControllerBase
     {
         try
         {
-            var allComments = await _commentRepository.GetAllAsync();
-            var taskComments = allComments.Where(c => c.TaskId == taskId).ToList();
-            var commentDtos = _mapper.Map<List<CommentDto>>(taskComments);
-            
-            return Ok(new { success = true, data = commentDtos });
+            var query = new GetTaskCommentsQuery(taskId);
+            var comments = await _mediator.Send(query);
+            return Ok(new { success = true, data = comments });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting comments for task {TaskId}", taskId);
-            return StatusCode(500, new { success = false, message = "An error occurred" });
+            return StatusCode(500, new { success = false, message = ex.Message });
         }
     }
     
     [HttpPost]
-    public async Task<IActionResult> Create(string taskId, [FromBody] CreateCommentDto request)
+    public async Task<IActionResult> Create(string taskId, [FromBody] CreateCommentCommand command)
     {
         try
         {
-            var comment = new Comment
-            {
-                Id = Guid.NewGuid().ToString(),
-                TaskId = taskId,
-                UserId = request.TaskId, // This should be from authenticated user context
-                Content = request.Content,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            
-            var created = await _commentRepository.AddAsync(comment);
-            var commentDto = _mapper.Map<CommentDto>(created);
-            
-            return CreatedAtAction(nameof(GetTaskComments), new { taskId }, 
-                new { success = true, data = commentDto, message = "Comment created successfully" });
+            // Ensure taskId from route is used
+            var createCommand = command with { TaskId = taskId };
+            var comment = await _mediator.Send(createCommand);
+            return Ok(new { success = true, data = comment, message = "Comment created successfully" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating comment");
-            return StatusCode(500, new { success = false, message = "An error occurred" });
+            return StatusCode(500, new { success = false, message = ex.Message });
         }
     }
     
     [HttpPut("{commentId}")]
-    public async Task<IActionResult> Update(string taskId, string commentId, [FromBody] UpdateCommentDto request)
+    public async Task<IActionResult> Update(string taskId, string commentId, [FromBody] UpdateCommentCommand command)
     {
         try
         {
-            var comment = await _commentRepository.GetByIdAsync(commentId);
-            
-            if (comment == null)
-                return NotFound(new { success = false, message = "Comment not found" });
-            
-            if (comment.TaskId != taskId)
-                return BadRequest(new { success = false, message = "Comment does not belong to this task" });
-            
-            comment.Content = request.Content;
-            
-            await _commentRepository.UpdateAsync(comment);
-            var commentDto = _mapper.Map<CommentDto>(comment);
-            
-            return Ok(new { success = true, data = commentDto, message = "Comment updated successfully" });
+            var updateCommand = command with { Id = commentId };
+            var comment = await _mediator.Send(updateCommand);
+            return Ok(new { success = true, data = comment, message = "Comment updated successfully" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating comment {Id}", commentId);
-            return StatusCode(500, new { success = false, message = "An error occurred" });
+            return StatusCode(500, new { success = false, message = ex.Message });
         }
     }
     
@@ -102,21 +67,13 @@ public class CommentsController : ControllerBase
     {
         try
         {
-            var comment = await _commentRepository.GetByIdAsync(commentId);
-            
-            if (comment == null)
-                return NotFound(new { success = false, message = "Comment not found" });
-            
-            if (comment.TaskId != taskId)
-                return BadRequest(new { success = false, message = "Comment does not belong to this task" });
-            
-            await _commentRepository.DeleteAsync(commentId);
-            return NoContent();
+            var command = new DeleteCommentCommand(commentId);
+            await _mediator.Send(command);
+            return Ok(new { success = true, message = "Comment deleted successfully" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting comment {Id}", commentId);
-            return StatusCode(500, new { success = false, message = "An error occurred" });
+            return StatusCode(500, new { success = false, message = ex.Message });
         }
     }
 }
