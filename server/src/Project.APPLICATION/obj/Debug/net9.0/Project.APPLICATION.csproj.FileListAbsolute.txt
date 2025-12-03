@@ -1,0 +1,16 @@
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/bin/Debug/net9.0/Project.APPLICATION.deps.json
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/bin/Debug/net9.0/Project.APPLICATION.dll
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/bin/Debug/net9.0/Project.APPLICATION.pdb
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/bin/Debug/net9.0/Project.CORE.dll
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/bin/Debug/net9.0/Project.CORE.pdb
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/obj/Debug/net9.0/Project.APPLICATION.csproj.AssemblyReference.cache
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/obj/Debug/net9.0/Project.APPLICATION.GeneratedMSBuildEditorConfig.editorconfig
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/obj/Debug/net9.0/Project.APPLICATION.AssemblyInfoInputs.cache
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/obj/Debug/net9.0/Project.APPLICATION.AssemblyInfo.cs
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/obj/Debug/net9.0/Project.APPLICATION.csproj.CoreCompileInputs.cache
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/obj/Debug/net9.0/Project..78A62395.Up2Date
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/obj/Debug/net9.0/Project.APPLICATION.dll
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/obj/Debug/net9.0/refint/Project.APPLICATION.dll
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/obj/Debug/net9.0/Project.APPLICATION.pdb
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/obj/Debug/net9.0/ref/Project.APPLICATION.dll
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/obj/Debug/net9.0/Project.APPLICATION.sourcelink.json

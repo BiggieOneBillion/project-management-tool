@@ -30,17 +30,15 @@ public class GetWorkspaceByIdQueryHandler : IRequestHandler<GetWorkspaceByIdQuer
         }
         else
         {
-            workspace = await _repository.GetByIdAsync(request.Id);
+            // Always load Members and Projects for accurate counts
+            workspace = await _repository.GetWithCountsAsync(request.Id);
         }
         
-        return workspace == null ? null : 
-            (request.IncludeMembers || request.IncludeProjects) 
-                ? _mapper.Map<WorkspaceDto>(workspace)
-                : _mapper.Map<WorkspaceDto>(workspace);
+        return workspace == null ? null : _mapper.Map<WorkspaceDto>(workspace);
     }
 }
 
-public class GetAllWorkspacesQueryHandler : IRequestHandler<GetAllWorkspacesQuery, List<WorkspaceDto>>
+public class GetAllWorkspacesQueryHandler : IRequestHandler<GetAllWorkspacesQuery, List<WorkspaceDetailDto>>
 {
     private readonly IWorkspaceRepository _repository;
     private readonly IMapper _mapper;
@@ -51,10 +49,10 @@ public class GetAllWorkspacesQueryHandler : IRequestHandler<GetAllWorkspacesQuer
         _mapper = mapper;
     }
     
-    public async Task<List<WorkspaceDto>> Handle(GetAllWorkspacesQuery request, CancellationToken cancellationToken)
+    public async Task<List<WorkspaceDetailDto>> Handle(GetAllWorkspacesQuery request, CancellationToken cancellationToken)
     {
         var workspaces = await _repository.GetAllAsync();
-        return _mapper.Map<List<WorkspaceDto>>(workspaces);
+        return _mapper.Map<List<WorkspaceDetailDto>>(workspaces);
     }
 }
 

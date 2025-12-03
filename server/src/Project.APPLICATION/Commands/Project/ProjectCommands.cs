@@ -10,7 +10,7 @@ public record CreateProjectCommand(
     string Status,
     DateTime StartDate,
     DateTime EndDate,
-    string TeamLeadId,
+    string? TeamLeadId,
     string WorkspaceId
 ) : IRequest<ProjectDto>;
 

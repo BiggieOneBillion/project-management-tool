@@ -34,13 +34,13 @@ public class WorkspaceConfiguration : IEntityTypeConfiguration<Workspace>
             .HasMaxLength(500);
         
         builder.Property(w => w.Settings)
-            .HasColumnType("nvarchar(max)");
+            .HasColumnType("text");
         
         builder.Property(w => w.CreatedAt)
-            .HasDefaultValueSql("GETUTCDATE()");
+            .HasDefaultValueSql("NOW()");
         
         builder.Property(w => w.UpdatedAt)
-            .HasDefaultValueSql("GETUTCDATE()");
+            .HasDefaultValueSql("NOW()");
         
         // Relationships
         builder.HasOne(w => w.Owner)
@@ -77,7 +77,7 @@ public class WorkspaceMemberConfiguration : IEntityTypeConfiguration<WorkspaceMe
             .IsRequired();
         
         builder.Property(wm => wm.JoinedAt)
-            .HasDefaultValueSql("GETUTCDATE()");
+            .HasDefaultValueSql("NOW()");
         
         builder.HasIndex(wm => new { wm.UserId, wm.WorkspaceId })
             .IsUnique();

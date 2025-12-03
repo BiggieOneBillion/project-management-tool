@@ -31,10 +31,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasMaxLength(500);
         
         builder.Property(u => u.CreatedAt)
-            .HasDefaultValueSql("GETUTCDATE()");
+            .HasDefaultValueSql("NOW()");
         
         builder.Property(u => u.UpdatedAt)
-            .HasDefaultValueSql("GETUTCDATE()");
+            .HasDefaultValueSql("NOW()");
         
         // Relationships
         builder.HasMany(u => u.OwnedWorkspaces)

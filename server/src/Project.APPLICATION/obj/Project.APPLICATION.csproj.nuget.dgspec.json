@@ -1,0 +1,154 @@
+{
+  "format": 1,
+  "restore": {
+    "/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/Project.APPLICATION.csproj": {}
+  },
+  "projects": {
+    "/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/Project.APPLICATION.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/Project.APPLICATION.csproj",
+        "projectName": "Project.APPLICATION",
+        "projectPath": "/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/Project.APPLICATION.csproj",
+        "packagesPath": "/Users/chukwuchinwendu/.nuget/packages/",
+        "outputPath": "/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.APPLICATION/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/chukwuchinwendu/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "/usr/local/share/dotnet/library-packs": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {
+              "/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/Project.CORE.csproj": {
+                "projectPath": "/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/Project.CORE.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.200"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "dependencies": {
+            "AutoMapper": {
+              "target": "Package",
+              "version": "[12.0.1, )"
+            },
+            "AutoMapper.Extensions.Microsoft.DependencyInjection": {
+              "target": "Package",
+              "version": "[12.0.1, )"
+            },
+            "FluentValidation": {
+              "target": "Package",
+              "version": "[12.1.0, )"
+            },
+            "FluentValidation.DependencyInjectionExtensions": {
+              "target": "Package",
+              "version": "[12.1.0, )"
+            },
+            "MediatR": {
+              "target": "Package",
+              "version": "[13.1.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.203/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/Project.CORE.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/Project.CORE.csproj",
+        "projectName": "Project.CORE",
+        "projectPath": "/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/Project.CORE.csproj",
+        "packagesPath": "/Users/chukwuchinwendu/.nuget/packages/",
+        "outputPath": "/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/chukwuchinwendu/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "/usr/local/share/dotnet/library-packs": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.200"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.203/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

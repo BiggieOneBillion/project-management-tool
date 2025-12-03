@@ -36,10 +36,10 @@ public class TaskConfiguration : IEntityTypeConfiguration<TaskEntity>
             .IsRequired();
         
         builder.Property(t => t.CreatedAt)
-            .HasDefaultValueSql("GETUTCDATE()");
+            .HasDefaultValueSql("NOW()");
         
         builder.Property(t => t.UpdatedAt)
-            .HasDefaultValueSql("GETUTCDATE()");
+            .HasDefaultValueSql("NOW()");
         
         // Relationships
         builder.HasOne(t => t.Project)
@@ -82,10 +82,10 @@ public class CommentConfiguration : IEntityTypeConfiguration<Comment>
             .IsRequired();
         
         builder.Property(c => c.CreatedAt)
-            .HasDefaultValueSql("GETUTCDATE()");
+            .HasDefaultValueSql("NOW()");
         
         builder.Property(c => c.UpdatedAt)
-            .HasDefaultValueSql("GETUTCDATE()");
+            .HasDefaultValueSql("NOW()");
         
         // Indexes
         builder.HasIndex(c => c.TaskId);

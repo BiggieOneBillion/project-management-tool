@@ -77,6 +77,7 @@ public class WorkspaceRepository : Repository<Workspace>, IWorkspaceRepository
             .Include(w => w.Owner)
             .Include(w => w.Members)
                 .ThenInclude(m => m.User)
+            .Include(w => w.Projects) // Always include for ProjectCount
             .FirstOrDefaultAsync(w => w.Id == id);
     }
     
@@ -84,6 +85,15 @@ public class WorkspaceRepository : Repository<Workspace>, IWorkspaceRepository
     {
         return await _context.Workspaces
             .Include(w => w.Owner)
+            .Include(w => w.Projects)
+            .Include(w => w.Members) // Always include for MemberCount
+            .FirstOrDefaultAsync(w => w.Id == id);
+    }
+    
+    public async Task<Workspace?> GetWithCountsAsync(string id)
+    {
+        return await _context.Workspaces
+            .Include(w => w.Members)
             .Include(w => w.Projects)
             .FirstOrDefaultAsync(w => w.Id == id);
     }

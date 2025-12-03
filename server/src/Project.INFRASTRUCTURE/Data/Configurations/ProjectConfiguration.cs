@@ -35,10 +35,10 @@ public class ProjectConfiguration : IEntityTypeConfiguration<ProjectEntity>
             .HasDefaultValue(0);
         
         builder.Property(p => p.CreatedAt)
-            .HasDefaultValueSql("GETUTCDATE()");
+            .HasDefaultValueSql("NOW()");
         
         builder.Property(p => p.UpdatedAt)
-            .HasDefaultValueSql("GETUTCDATE()");
+            .HasDefaultValueSql("NOW()");
         
         // Relationships
         builder.HasOne(p => p.Workspace)
@@ -49,7 +49,8 @@ public class ProjectConfiguration : IEntityTypeConfiguration<ProjectEntity>
         builder.HasOne(p => p.TeamLead)
             .WithMany(u => u.LedProjects)
             .HasForeignKey(p => p.TeamLeadId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
         
         builder.HasMany(p => p.Members)
             .WithOne(pm => pm.Project)
@@ -81,7 +82,7 @@ public class ProjectMemberConfiguration : IEntityTypeConfiguration<ProjectMember
             .IsRequired();
         
         builder.Property(pm => pm.AddedAt)
-            .HasDefaultValueSql("GETUTCDATE()");
+            .HasDefaultValueSql("NOW()");
         
         builder.HasIndex(pm => new { pm.UserId, pm.ProjectId })
             .IsUnique();

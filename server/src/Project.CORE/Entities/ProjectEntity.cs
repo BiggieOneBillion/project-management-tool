@@ -11,14 +11,14 @@ public class ProjectEntity
     public ProjectStatus Status { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
-    public string TeamLeadId { get; set; } = string.Empty;
+    public string? TeamLeadId { get; set; }
     public string WorkspaceId { get; set; } = string.Empty;
     public int Progress { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     
     // Navigation Properties
-    public User TeamLead { get; set; } = null!;
+    public User? TeamLead { get; set; }
     public Workspace Workspace { get; set; } = null!;
     public ICollection<ProjectMember> Members { get; set; } = new List<ProjectMember>();
     public ICollection<TaskEntity> Tasks { get; set; } = new List<TaskEntity>();

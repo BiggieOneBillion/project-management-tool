@@ -1,10 +1,11 @@
 namespace Project.APPLICATION.DTOs.User;
 
-public record UserDto(
-    string Id,
-    string Name,
-    string Email,
-    string? ImageUrl,
-    DateTime CreatedAt,
-    DateTime UpdatedAt
-);
+public class UserDto
+{
+    public string Id { get; init; } = "";
+    public string Name { get; init; } = "";
+    public string Email { get; init; } = "";
+    public string? ImageUrl { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public DateTime UpdatedAt { get; init; }
+}
