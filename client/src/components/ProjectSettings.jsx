@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import AddProjectMember from "./AddProjectMember";
 import toast from "react-hot-toast";
 import { projectService } from "../services";
+import { useProjectStore } from "../stores/useProjectStore";
+import { useWorkspaceStore } from "../stores/useWorkspaceStore";
 
 export default function ProjectSettings({ project }) {
+    console.log("PROJECT INFO", project)
 //     {
 //     "id": "44df8d32-e992-44d1-b9f0-12565b8c93d0",
 //     "name": "The PAPSS Project",
@@ -37,9 +40,56 @@ export default function ProjectSettings({ project }) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const {fetchProjects} = useProjectStore(state => state)
+    const {currentWorkspace} = useWorkspaceStore(state => state)
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Check if any changes were made
+        const hasChanges = 
+            formData.name !== project.name ||
+            formData.description !== project.description ||
+            formData.status !== project.status ||
+            formData.priority !== project.priority ||
+            formData.progress !== project.progress ||
+            format(new Date(formData.startDate), "yyyy-MM-dd") !== format(new Date(project.startDate), "yyyy-MM-dd") ||
+            format(new Date(formData.endDate), "yyyy-MM-dd") !== format(new Date(project.endDate), "yyyy-MM-dd");
 
+        if (!hasChanges) {
+            toast.info("No changes to save");
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            // Prepare data for backend (PascalCase)
+            const updateData = {
+                Id: project.id,
+                Name: formData.name,
+                Description: formData.description,
+                Status: formData.status,
+                Priority: formData.priority,
+                Progress: formData.progress,
+                StartDate: formData.startDate,
+                EndDate: formData.endDate,
+            };
+
+            console.log("UPDATE INFO", updateData)
+
+
+
+            await projectService.update(project.id, updateData);
+
+            await fetchProjects(currentWorkspace.id)
+
+            toast.success("Project updated successfully");
+        } catch (error) {
+            console.error("Failed to update project:", error);
+            toast.error(error?.message || "Failed to update project");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const getProjectMembers = async () => {
