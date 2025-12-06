@@ -8,4 +8,5 @@ public record GetProjectByIdQuery(string Id, bool IncludeTasks = false, bool Inc
 
 public record GetAllProjectsQuery() : IRequest<List<ProjectDto>>;
 
-public record GetWorkspaceProjectsQuery(string WorkspaceId) : IRequest<List<ProjectDto>>;
+public record GetWorkspaceProjectsQuery(string WorkspaceId, bool IncludeTasks = false) 
+    : IRequest<List<ProjectDto>>;

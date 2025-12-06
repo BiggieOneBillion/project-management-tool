@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { ChevronRightIcon, SettingsIcon, KanbanIcon, ChartColumnIcon, CalendarIcon, ArrowRightIcon } from 'lucide-react';
+import { useProjectStore } from '../stores/useProjectStore';
 
 const ProjectSidebar = () => {
 
@@ -8,6 +9,8 @@ const ProjectSidebar = () => {
 
     const [expandedProjects, setExpandedProjects] = useState(new Set());
     const [searchParams] = useSearchParams();
+
+    const {projects} = useProjectStore((state) => state);
 
     // const projects = useSelector(
     //     (state) => state?.workspace?.currentWorkspace?.projects || []
@@ -38,7 +41,7 @@ const ProjectSidebar = () => {
                     </button>
                 </Link>
             </div>
-{/* 
+
             <div className="space-y-1 px-3">
                 {projects.map((project) => (
                     <div key={project.id}>
@@ -68,7 +71,7 @@ const ProjectSidebar = () => {
                         )}
                     </div>
                 ))}
-            </div> */}
+            </div>
         </div>
     );
 };

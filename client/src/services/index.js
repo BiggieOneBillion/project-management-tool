@@ -1,7 +1,7 @@
 import api from './api';
 
 export const workspaceService = { 
-  getAll: async (userId = "user_1") => {
+  getAll: async (userId) => {
     const params = userId ? { userId } : {};
     return await api.get('/workspaces', { params });
   },
@@ -26,8 +26,10 @@ export const workspaceService = {
 };
 
 export const projectService = {
-  getAll: async (workspaceId = null) => {
-    const params = workspaceId ? { workspaceId } : {};
+  getAll: async (workspaceId = null, includeTasks = false) => {
+    const params = {};
+    if (workspaceId) params.workspaceId = workspaceId;
+    if (includeTasks) params.includeTasks = includeTasks;
     return await api.get('/projects', { params });
   },
 
@@ -35,6 +37,11 @@ export const projectService = {
     return await api.get(`/projects/${id}`, {
       params: { includeTasks, includeMembers },
     });
+  },
+
+  getProjectMembers: async (projectId) => {
+    const response = await api.get(`/projects/${projectId}/members`);
+    return response;
   },
 
   create: async (data) => {
@@ -123,5 +130,69 @@ export const commentService = {
 
   delete: async (taskId, commentId) => {
     return await api.delete(`/tasks/${taskId}/comments/${commentId}`);
+  },
+};
+
+export const authService = {
+  login: async (email, password) => {
+    return await api.post('/auth/login', { email, password });
+  },
+
+  register: async (name, email, password, invitationToken = null) => {
+    return await api.post('/auth/register', { 
+      name, 
+      email, 
+      password, 
+      invitationToken 
+    });
+  },
+
+  refreshToken: async (refreshToken) => {
+    return await api.post('/auth/refresh', { refreshToken });
+  },
+
+  logout: async () => {
+    return await api.post('/auth/logout');
+  },
+
+  getCurrentUser: async () => {
+    return await api.get('/auth/me');
+  },
+};
+
+export const invitationService = {
+  inviteToWorkspace: async (workspaceId, email, role) => {
+    return await api.post('/invitations/workspace', {
+      WorkspaceId: workspaceId,
+      Email: email,
+      Role: role,
+    });
+  },
+
+  getWorkspaceInvitations: async (workspaceId, status = 'PENDING') => {
+    return await api.get(`/invitations/workspace/${workspaceId}`, {
+      params: { status },
+    });
+  },
+
+  inviteToProject: async (projectId, email) => {
+    return await api.post('/invitations/project', {
+      projectId,
+      email,
+    });
+  },
+
+  getUserInvitations: async (email) => {
+    return await api.get('/invitations/pending', {
+      params: { email },
+    });
+  },
+
+  acceptInvitation: async (token) => {
+    return await api.post(`/invitations/accept/${token}`);
+  },
+
+  revokeInvitation: async (invitationId) => {
+    return await api.post(`/invitations/revoke/${invitationId}`);
   },
 };

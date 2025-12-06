@@ -1,7 +1,10 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { projectService } from '../services';
 
-export const useProjectStore = create((set) => ({
+export const useProjectStore = create(
+  persist(
+    (set) => ({
   // State
   projects: [],
   currentProject: null,
@@ -14,10 +17,10 @@ export const useProjectStore = create((set) => ({
   clearError: () => set({ error: null }),
 
   // Async actions
-  fetchProjects: async (workspaceId = null) => {
+  fetchProjects: async (workspaceId = null, includeTasks = false) => {
     set({ loading: true, error: null });
     try {
-      const response = await projectService.getAll(workspaceId);
+      const response = await projectService.getAll(workspaceId, includeTasks);
       set({ projects: response.data, loading: false });
     } catch (error) {
       set({ 
@@ -93,4 +96,10 @@ export const useProjectStore = create((set) => ({
       set({ error: error.message || 'Failed to delete project' });
     }
   },
-}));
+}),
+    {
+      name: 'project-storage',
+      storage: createJSONStorage(() => sessionStorage),
+    }
+  )
+);

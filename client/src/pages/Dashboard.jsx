@@ -1,25 +1,48 @@
-import { Plus } from "lucide-react";
+import {
+  BarChart3,
+  CheckCircle2,
+  Clock,
+  ListTodo,
+  Plus,
+} from "lucide-react";
 import { useState, useEffect, use } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import StatsGrid from "../components/StatsGrid";
 import ProjectOverview from "../components/ProjectOverview";
 import RecentActivity from "../components/RecentActivity";
 import TasksSummary from "../components/TasksSummary";
 import CreateProjectDialog from "../components/CreateProjectDialog";
+import CreateWorkspaceModal from "../components/CreateWorkspaceModal";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
 import { useProjectStore } from "../stores/useProjectStore";
 import { useTaskStore } from "../stores/useTaskStore";
+import { useAuthStore } from "../stores/useAuthStore";
 
 const Dashboard = () => {
-  const user = { fullName: "User", id: "user_1" }; // Placeholder user object
+  // const user = { fullName: "User", id: "user_1" }; // Placeholder user object
+  const {user} = useAuthStore(state => state)
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const {loading:workspacesLoading, fetchWorkspaces } = useWorkspaceStore((state) => state);
   const {loading:projectsLoading} = useProjectStore((state) => state);
   const {loading:tasksLoading} = useTaskStore((state) => state);
 
+  console.log(user)
+
+  // Check for create=workspace query parameter
+  useEffect(() => {
+    if (searchParams.get('create') === 'workspace') {
+      setIsWorkspaceModalOpen(true);
+      // Remove the query parameter
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
+
   useEffect(()=>{
-    fetchWorkspaces(user.id);
+    fetchWorkspaces(user?.id);
   },[])
 
 //   useEffect(() => {
@@ -33,7 +56,8 @@ const Dashboard = () => {
 //     }
 //   }, [dispatch]); // dispatch is stable and won't cause re-renders
 
-  const isLoading = workspacesLoading || projectsLoading || tasksLoading;
+  const isLoading = workspacesLoading 
+  // || projectsLoading || tasksLoading;
 
   if (isLoading) {
     return (
@@ -54,7 +78,7 @@ const Dashboard = () => {
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-1">
             {" "}
-            Welcome back, {user?.fullName || "User"}{" "}
+            Welcome back, {user?.name || "User"}{" "}
           </h1>
           <p className="text-gray-500 dark:text-zinc-400 text-sm">
             {" "}
@@ -86,6 +110,12 @@ const Dashboard = () => {
           <TasksSummary />
         </div>
       </div>
+
+      {/* Workspace Modal */}
+      <CreateWorkspaceModal 
+        isOpen={isWorkspaceModalOpen}
+        onClose={() => setIsWorkspaceModalOpen(false)}
+      />
     </div>
   );
 };

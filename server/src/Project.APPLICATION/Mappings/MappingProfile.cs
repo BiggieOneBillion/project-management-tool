@@ -52,5 +52,10 @@ public class MappingProfile : Profile
         
         // Comment mappings
         CreateMap<Comment, CommentDto>();
+        
+        // Invitation mappings
+        CreateMap<Invitation, DTOs.Invitation.InvitationDto>()
+            .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
     }
 }

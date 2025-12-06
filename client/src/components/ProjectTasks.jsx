@@ -2,8 +2,10 @@ import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bug, CalendarIcon, GitCommit, MessageSquare, Square, Trash, XIcon, Zap } from "lucide-react";
+import { Bug, CalendarIcon, GitCommit, MessageSquare, Square, Trash, XIcon, Zap, Edit2, Trash2 } from "lucide-react";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
+import { taskService } from "../services";
+import { useTaskStore } from "../stores/useTaskStore";
 
 const typeIcons = {
     BUG: { icon: Bug, color: "text-red-600 dark:text-red-400" },
@@ -19,8 +21,11 @@ const priorityTexts = {
     HIGH: { background: "bg-emerald-100 dark:bg-emerald-950", prioritycolor: "text-emerald-600 dark:text-emerald-400" },
 };
 
-const ProjectTasks = ({ tasks }) => {
+const ProjectTasks = ({ tasks, isWorkspaceOwner = false, onEditTask }) => {
     const { updateTask: updateTaskInStore, deleteTask: deleteTaskInStore } = useWorkspaceStore();
+    const {updateTask: updateTaskInStores} = useTaskStore(state => state)
+    const currentWorkspace = useWorkspaceStore((state) => state?.currentWorkspace || null);
+    const fetchWorkspaceById = useWorkspaceStore((state) => state.fetchWorkspaceById);
     const navigate = useNavigate();
     const [selectedTasks, setSelectedTasks] = useState([]);
 
@@ -55,14 +60,19 @@ const ProjectTasks = ({ tasks }) => {
 
     const handleStatusChange = async (taskId, newStatus) => {
         try {
+            console.log(taskId, newStatus);
             toast.loading("Updating status...");
 
             //  Simulate API call
             await new Promise((resolve) => setTimeout(resolve, 2000));
 
             let updatedTask = structuredClone(tasks.find((t) => t.id === taskId));
+
+            console.log("CLONED TASK",updatedTask);
             updatedTask.status = newStatus;
-            updateTaskInStore(updatedTask);
+            console.log("UPDATED TASK",updatedTask);
+            // updateTaskInStore(updatedTask);
+            await updateTaskInStores(taskId, updatedTask)
 
             toast.dismissAll();
             toast.success("Task status updated successfully");
@@ -86,6 +96,27 @@ const ProjectTasks = ({ tasks }) => {
 
             toast.dismissAll();
             toast.success("Tasks deleted successfully");
+        } catch (error) {
+            toast.dismissAll();
+            toast.error(error?.response?.data?.message || error.message);
+        }
+    };
+
+    const handleDeleteTask = async (taskId) => {
+        try {
+            const confirm = window.confirm("Are you sure you want to delete this task?");
+            if (!confirm) return;
+
+            toast.loading("Deleting task...");
+            await taskService.delete(taskId);
+
+            // Refresh workspace
+            if (currentWorkspace?.id) {
+                await fetchWorkspaceById(currentWorkspace.id, true, true);
+            }
+
+            toast.dismissAll();
+            toast.success("Task deleted successfully");
         } catch (error) {
             toast.dismissAll();
             toast.error(error?.response?.data?.message || error.message);
@@ -163,6 +194,7 @@ const ProjectTasks = ({ tasks }) => {
                                     <th className="px-4 py-3">Status</th>
                                     <th className="px-4 py-3">Assignee</th>
                                     <th className="px-4 py-3">Due Date</th>
+                                    {isWorkspaceOwner && <th className="px-4 py-3">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody>
@@ -204,9 +236,29 @@ const ProjectTasks = ({ tasks }) => {
                                                 <td className="px-4 py-2">
                                                     <div className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400">
                                                         <CalendarIcon className="size-4" />
-                                                        {format(new Date(task.due_date), "dd MMMM")}
+                                                        {format(new Date(task.dueDate), "dd MMMM")}
                                                     </div>
                                                 </td>
+                                                {isWorkspaceOwner && (
+                                                    <td onClick={e => e.stopPropagation()} className="px-4 py-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => onEditTask(task)}
+                                                                className="p-1.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition"
+                                                                title="Edit task"
+                                                            >
+                                                                <Edit2 className="size-4" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteTask(task.id)}
+                                                                className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition"
+                                                                title="Delete task"
+                                                            >
+                                                                <Trash2 className="size-4" />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                )}
                                             </tr>
                                         );
                                     })
@@ -262,7 +314,7 @@ const ProjectTasks = ({ tasks }) => {
 
                                         <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
                                             <CalendarIcon className="size-4" />
-                                            {format(new Date(task.due_date), "dd MMMM")}
+                                            {format(new Date(task.dueDate), "dd MMMM")}
                                         </div>
                                     </div>
                                 );

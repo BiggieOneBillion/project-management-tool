@@ -1,12 +1,15 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Project.APPLICATION.Commands.Task;
 using Project.APPLICATION.Queries.Task;
+using System.Security.Claims;
 
 namespace Project.API.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
+[Authorize]
 public class TasksController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -70,13 +73,24 @@ public class TasksController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateTaskCommand command)
     {
+        Console.WriteLine($"ENTERED HERE {command} ");
         try
         {
-            var task = await _mediator.Send(command);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { success = false, message = "Invalid token" });
+            
+            var createCommand = command with { UserId = userId };
+            var task = await _mediator.Send(createCommand);
+
             return CreatedAtAction(
                 nameof(GetById),
                 new { id = task.Id },
                 new { success = true, data = task, message = "Task created successfully" });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { success = false, message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -89,9 +103,17 @@ public class TasksController : ControllerBase
     {
         try
         {
-            var updateCommand = command with { Id = id };
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { success = false, message = "Invalid token" });
+            
+            var updateCommand = command with { Id = id, UserId = userId };
             var task = await _mediator.Send(updateCommand);
             return Ok(new { success = true, data = task, message = "Task updated successfully" });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { success = false, message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -104,9 +126,17 @@ public class TasksController : ControllerBase
     {
         try
         {
-            var command = new DeleteTaskCommand(id);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { success = false, message = "Invalid token" });
+            
+            var command = new DeleteTaskCommand(id, userId);
             await _mediator.Send(command);
             return Ok(new { success = true, message = "Task deleted successfully" });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { success = false, message = ex.Message });
         }
         catch (Exception ex)
         {

@@ -1,10 +1,13 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { workspaceService } from '../services';
 
 // Cache duration in milliseconds (5 minutes)
 const CACHE_DURATION = 5 * 60 * 1000;
 
-export const useWorkspaceStore = create((set, get) => ({
+export const useWorkspaceStore = create(
+  persist(
+    (set, get) => ({
   // State
   workspaces: [],
   currentWorkspace: null,
@@ -41,7 +44,6 @@ export const useWorkspaceStore = create((set, get) => ({
     const { loading } = get();
     if (loading) return;
 
-    console.log(123456);
 
     // set({ loading: true, error: null });
     try {
@@ -111,11 +113,15 @@ export const useWorkspaceStore = create((set, get) => ({
         currentWorkspace: workspace,
         loading: false
       }));
+      
+      return workspace;
     } catch (error) {
+      const errorMessage = error.message || 'Failed to create workspace';
       set({ 
         loading: false, 
-        error: error.message || 'Failed to create workspace' 
+        error: errorMessage
       });
+      throw new Error(errorMessage);
     }
   },
 
@@ -236,4 +242,10 @@ export const useWorkspaceStore = create((set, get) => ({
       return { currentWorkspace };
     });
   },
-}));
+}),
+    {
+      name: 'workspace-storage',
+      storage: createJSONStorage(() => sessionStorage),
+    }
+  )
+);

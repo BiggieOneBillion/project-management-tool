@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { Mail, UserPlus } from "lucide-react";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
+import { invitationService } from "../services";
 
 const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
 
     const currentWorkspace = useWorkspaceStore((state) => state?.currentWorkspace || null);
+    const fetchWorkspaceById = useWorkspaceStore((state) => state.fetchWorkspaceById);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
     const [formData, setFormData] = useState({
         email: "",
         role: "org:member",
@@ -13,7 +17,56 @@ const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError(null);
+        setSuccess(null);
+        setIsSubmitting(true);
 
+        try {
+            // Map UI role to backend enum (use integer values)
+            const roleMapping = {
+                "org:member": 1,  // WorkspaceRole.MEMBER
+                "org:admin": 2,   // WorkspaceRole.ADMIN
+            };
+            const backendRole = roleMapping[formData.role] || 1;
+
+            console.log("TEST CASE 222")
+
+            console.log("currentWorkspace", currentWorkspace)
+            console.log("formData", formData)
+            console.log("backendRole", backendRole)
+
+            // Send invitation
+            await invitationService.inviteToWorkspace(
+                currentWorkspace.id,
+                formData.email,
+                backendRole
+            );
+
+            console.log("TEST CASE 333")
+
+
+            // Show success message
+            setSuccess(`Invitation sent to ${formData.email}`);
+            
+            // Reset form
+            setFormData({ email: "", role: "org:member" });
+            
+            // Refresh workspace to get updated data
+            if (currentWorkspace?.id) {
+                await fetchWorkspaceById(currentWorkspace.id, true, false);
+            }
+
+            // Close dialog after a short delay
+            setTimeout(() => {
+                setIsDialogOpen(false);
+                setSuccess(null);
+            }, 1500);
+        } catch (err) {
+            console.log("error", err);
+            setError(err.response?.data?.message || "Failed to send invitation");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     if (!isDialogOpen) return null;
@@ -35,6 +88,20 @@ const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Success Message */}
+                    {success && (
+                        <div className="p-3 rounded bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm">
+                            {success}
+                        </div>
+                    )}
+
+                    {/* Error Message */}
+                    {error && (
+                        <div className="p-3 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
+                            {error}
+                        </div>
+                    )}
+
                     {/* Email */}
                     <div className="space-y-2">
                         <label htmlFor="email" className="text-sm font-medium text-zinc-900 dark:text-zinc-200">

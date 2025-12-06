@@ -1,7 +1,10 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { taskService } from '../services';
 
-export const useTaskStore = create((set) => ({
+export const useTaskStore = create(
+  persist(
+    (set) => ({
   // State
   tasks: [],
   currentTask: null,
@@ -60,6 +63,8 @@ export const useTaskStore = create((set) => ({
     try {
       const response = await taskService.update(id, data);
       const task = response.data;
+
+      console.log("UPDATE RESULT", task)
       
       set((state) => {
         const tasks = state.tasks.map((t) => 
@@ -105,4 +110,10 @@ export const useTaskStore = create((set) => ({
       set({ error: error.message || 'Failed to delete tasks' });
     }
   },
-}));
+}),
+    {
+      name: 'task-storage',
+      storage: createJSONStorage(() => sessionStorage),
+    }
+  )
+);

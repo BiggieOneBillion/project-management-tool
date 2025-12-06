@@ -1,16 +1,23 @@
 import { useEffect, useState } from "react";
-import { UsersIcon, Search, UserPlus, Shield, Activity } from "lucide-react";
+import { UsersIcon, Search, UserPlus, Shield, Activity, Clock, X } from "lucide-react";
 import InviteMemberDialog from "../components/InviteMemberDialog";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
+import { useTaskStore } from "../stores/useTaskStore";
+import { invitationService } from "../services";
 
 const Team = () => {
 
-    const [tasks, setTasks] = useState([]);
+    // const [tasks, setTasks] = useState([]);
+    const [tasksCount, setTasksCount] = useState(0);
     const [searchTerm, setSearchTerm] = useState("");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [users, setUsers] = useState([]);
+    const [pendingInvitations, setPendingInvitations] = useState([]);
+    const [isLoadingInvitations, setIsLoadingInvitations] = useState(false);
     const currentWorkspace = useWorkspaceStore((state) => state?.currentWorkspace || null);
     const projects = currentWorkspace?.projects || [];
+    const {fetchTasks, tasks:workspaceTask} = useTaskStore(state => state)
+    
 
     const filteredUsers = users.filter(
         (user) =>
@@ -18,9 +25,37 @@ const Team = () => {
             user?.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const fetchPendingInvitations = async () => {
+        if (!currentWorkspace?.id) return;
+        
+        setIsLoadingInvitations(true);
+        try {
+            const response = await invitationService.getWorkspaceInvitations(currentWorkspace.id);
+            setPendingInvitations(response.data || []);
+        } catch (error) {
+            console.error("Failed to fetch pending invitations:", error);
+        } finally {
+            setIsLoadingInvitations(false);
+        }
+    };
+
+    const handleRevokeInvitation = async (invitationId) => {
+        try {
+            await invitationService.revokeInvitation(invitationId);
+            // Refresh the invitations list
+            await fetchPendingInvitations();
+        } catch (error) {
+            console.error("Failed to revoke invitation:", error);
+        }
+    };
+
+    console.log("CURRENT WORKSPACE", currentWorkspace)
+
     useEffect(() => {
         setUsers(currentWorkspace?.members || []);
-        setTasks(currentWorkspace?.projects?.reduce((acc, project) => [...acc, ...project.tasks], []) || []);
+        // setTasks(currentWorkspace?.projects?.reduce((acc, project) => [...acc, ...project.tasks], []) || []);
+        setTasksCount(currentWorkspace?.projects?.reduce((acc, project) => acc + project.taskCount, 0) || 0);
+        fetchPendingInvitations();
     }, [currentWorkspace]);
 
     // console.log("Current Workspace Members:", currentWorkspace);
@@ -76,7 +111,7 @@ const Team = () => {
                     <div className="flex items-center justify-between gap-8 md:gap-22">
                         <div>
                             <p className="text-sm text-gray-500 dark:text-zinc-400">Total Tasks</p>
-                            <p className="text-xl font-bold text-gray-900 dark:text-white">{tasks.length}</p>
+                            <p className="text-xl font-bold text-gray-900 dark:text-white">{tasksCount}</p>
                         </div>
                         <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-500/10">
                             <Shield className="size-4 text-purple-500 dark:text-purple-200" />
@@ -84,6 +119,68 @@ const Team = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Pending Invitations Section */}
+            {pendingInvitations.length > 0 && (
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <Clock className="w-5 h-5 text-amber-500 dark:text-amber-400" />
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            Pending Invitations ({pendingInvitations.length})
+                        </h2>
+                    </div>
+
+                    <div className="overflow-x-auto rounded-md border border-gray-200 dark:border-zinc-800">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-800">
+                            <thead className="bg-amber-50 dark:bg-amber-900/10">
+                                <tr>
+                                    <th className="px-6 py-2.5 text-left font-medium text-sm text-gray-900 dark:text-white">
+                                        Email
+                                    </th>
+                                    <th className="px-6 py-2.5 text-left font-medium text-sm text-gray-900 dark:text-white">
+                                        Role
+                                    </th>
+                                    <th className="px-6 py-2.5 text-left font-medium text-sm text-gray-900 dark:text-white">
+                                        Invited
+                                    </th>
+                                    <th className="px-6 py-2.5 text-left font-medium text-sm text-gray-900 dark:text-white">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
+                                {pendingInvitations.map((invitation) => (
+                                    <tr
+                                        key={invitation.id}
+                                        className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
+                                    >
+                                        <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                            {invitation.email}
+                                        </td>
+                                        <td className="px-6 py-3 whitespace-nowrap">
+                                            <span className="px-2 py-1 text-xs rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400">
+                                                Pending
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">
+                                            {new Date(invitation.createdAt).toLocaleDateString()}
+                                        </td>
+                                        <td className="px-6 py-3 whitespace-nowrap">
+                                            <button
+                                                onClick={() => handleRevokeInvitation(invitation.id)}
+                                                className="flex items-center gap-1 px-3 py-1 text-xs rounded-md bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-500/30 transition"
+                                            >
+                                                <X className="w-3 h-3" />
+                                                Revoke
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
 
             {/* Search */}
             <div className="relative max-w-md">

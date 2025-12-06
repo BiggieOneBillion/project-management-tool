@@ -17,6 +17,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ProjectMember> ProjectMembers { get; set; } = null!;
     public DbSet<TaskEntity> Tasks { get; set; } = null!;
     public DbSet<Comment> Comments { get; set; } = null!;
+    public DbSet<Invitation> Invitations { get; set; } = null!;
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

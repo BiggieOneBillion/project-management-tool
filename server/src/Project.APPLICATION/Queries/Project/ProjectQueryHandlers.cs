@@ -71,7 +71,17 @@ public class GetWorkspaceProjectsQueryHandler : IRequestHandler<GetWorkspaceProj
     
     public async Task<List<ProjectDto>> Handle(GetWorkspaceProjectsQuery request, CancellationToken cancellationToken)
     {
-        var projects = await _repository.GetWorkspaceProjectsAsync(request.WorkspaceId);
+        IEnumerable<CORE.Entities.ProjectEntity> projects;
+        
+        if (request.IncludeTasks)
+        {
+            projects = await _repository.GetWorkspaceProjectsWithTasksAsync(request.WorkspaceId);
+        }
+        else
+        {
+            projects = await _repository.GetWorkspaceProjectsAsync(request.WorkspaceId);
+        }
+        
         return _mapper.Map<List<ProjectDto>>(projects);
     }
 }

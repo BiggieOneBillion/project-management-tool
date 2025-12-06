@@ -108,8 +108,27 @@ public class ProjectRepository : Repository<ProjectEntity>, IProjectRepository
         return await _context.Projects
             .Include(p => p.TeamLead)
             .Include(p => p.Members)
-                .ThenInclude(m => m.User)
             .Where(p => p.WorkspaceId == workspaceId)
+            .ToListAsync();
+    }
+    
+    public async Task<IEnumerable<ProjectEntity>> GetWorkspaceProjectsWithTasksAsync(string workspaceId)
+    {
+        return await _context.Projects
+            .Include(p => p.TeamLead)
+            .Include(p => p.Members)
+            .Include(p => p.Tasks)
+                .ThenInclude(t => t.Assignee)
+            .Where(p => p.WorkspaceId == workspaceId)
+            .ToListAsync();
+    }
+    
+    public async Task<IEnumerable<ProjectEntity>> GetUserProjectsAsync(string userId)
+    {
+        return await _context.Projects
+            .Include(p => p.TeamLead)
+            .Include(p => p.Members)
+            .Where(p => p.TeamLeadId == userId || p.Members.Any(m => m.UserId == userId))
             .ToListAsync();
     }
     
@@ -171,5 +190,63 @@ public class UserRepository : Repository<User>, IUserRepository
     {
         return await _context.Users
             .FirstOrDefaultAsync(u => u.Email == email);
+    }
+
+    public async Task<User?> GetByRefreshTokenAsync(string refreshToken)
+    {
+        return await _context.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+    }
+}
+
+public class InvitationRepository : Repository<Invitation>, IInvitationRepository
+{
+    public InvitationRepository(ApplicationDbContext context) : base(context) { }
+    
+    public async Task<Invitation?> GetByTokenAsync(string token)
+    {
+        return await _context.Invitations
+            .Include(i => i.Workspace)
+            .Include(i => i.Project)
+            .Include(i => i.InvitedBy)
+            .FirstOrDefaultAsync(i => i.Token == token);
+    }
+    
+    public async Task<Invitation?> GetPendingInvitationAsync(string email, string? workspaceId, string? projectId)
+    {
+        return await _context.Invitations
+            .FirstOrDefaultAsync(i => 
+                i.Email == email &&
+                i.Status == CORE.Enums.InvitationStatus.PENDING &&
+                (workspaceId == null || i.WorkspaceId == workspaceId) &&
+                (projectId == null || i.ProjectId == projectId));
+    }
+    
+    public async Task<IEnumerable<Invitation>> GetUserInvitationsAsync(string email)
+    {
+        return await _context.Invitations
+            .Include(i => i.Workspace)
+            .Include(i => i.Project)
+            .Include(i => i.InvitedBy)
+            .Where(i => i.Email == email)
+            .OrderByDescending(i => i.CreatedAt)
+            .ToListAsync();
+    }
+    
+    public async Task<IEnumerable<Invitation>> GetWorkspaceInvitationsAsync(string workspaceId)
+    {
+        return await _context.Invitations
+            .Include(i => i.InvitedBy)
+            .Where(i => i.WorkspaceId == workspaceId)
+            .OrderByDescending(i => i.CreatedAt)
+            .ToListAsync();
+    }
+    
+    public async Task<IEnumerable<Invitation>> GetProjectInvitationsAsync(string projectId)
+    {
+        return await _context.Invitations
+            .Include(i => i.InvitedBy)
+            .Where(i => i.ProjectId == projectId)
+            .OrderByDescending(i => i.CreatedAt)
+            .ToListAsync();
     }
 }

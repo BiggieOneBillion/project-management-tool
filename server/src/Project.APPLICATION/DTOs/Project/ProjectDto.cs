@@ -19,6 +19,7 @@ public class ProjectDto
     public UserDto? TeamLead { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
+    public List<ProjectMemberDto>? Members { get; init; } = [];
 }
 
 public class ProjectDetailDto
@@ -47,3 +48,12 @@ public class ProjectMemberDto
     public DateTime AddedAt { get; init; }
     public UserDto? User { get; init; }
 }
+
+// public class ProjectDetailMemberDto
+// {
+//     public string Id { get; init; } = "";
+//     public string UserId { get; init; } = "";
+//     public string ProjectId { get; init; } = "";
+//     public DateTime AddedAt { get; init; }
+//     public UserDto? User { get; init; }
+// }

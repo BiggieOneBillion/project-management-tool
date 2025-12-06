@@ -9,10 +9,10 @@
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.INFRASTRUCTURE/obj/Debug/net9.0/Project.INFRASTRUCTURE.AssemblyInfoInputs.cache
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.INFRASTRUCTURE/obj/Debug/net9.0/Project.INFRASTRUCTURE.AssemblyInfo.cs
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.INFRASTRUCTURE/obj/Debug/net9.0/Project.INFRASTRUCTURE.csproj.CoreCompileInputs.cache
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.INFRASTRUCTURE/obj/Debug/net9.0/Project.INFRASTRUCTURE.sourcelink.json
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.INFRASTRUCTURE/obj/Debug/net9.0/Project..DF83CFC9.Up2Date
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.INFRASTRUCTURE/obj/Debug/net9.0/Project.INFRASTRUCTURE.dll
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.INFRASTRUCTURE/obj/Debug/net9.0/refint/Project.INFRASTRUCTURE.dll
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.INFRASTRUCTURE/obj/Debug/net9.0/Project.INFRASTRUCTURE.pdb
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.INFRASTRUCTURE/obj/Debug/net9.0/Project.INFRASTRUCTURE.genruntimeconfig.cache
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.INFRASTRUCTURE/obj/Debug/net9.0/ref/Project.INFRASTRUCTURE.dll
-/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.INFRASTRUCTURE/obj/Debug/net9.0/Project.INFRASTRUCTURE.sourcelink.json

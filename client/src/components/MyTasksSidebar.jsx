@@ -2,10 +2,16 @@ import { useEffect, useState } from 'react';
 import { CheckSquareIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWorkspaceStore } from '../stores/useWorkspaceStore';
+import { useAuthStore } from '../stores/useAuthStore';
+import { useTaskStore } from '../stores/useTaskStore';
 
 function MyTasksSidebar() {
 
-    const user = { id: 'user_1' }
+
+    const {user} = useAuthStore(state => state)
+    const {fetchTasks, tasks} = useTaskStore(state => state)
+
+    // const {fetchProjects, projects} = useProjectStore(state => state)
 
     const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
     const [showMyTasks, setShowMyTasks] = useState(false);
@@ -29,11 +35,12 @@ function MyTasksSidebar() {
     const fetchUserTasks = () => {
         const userId = user?.id || '';
         if (!userId || !currentWorkspace) return;
-        const currentWorkspaceTasks = currentWorkspace.projects?.flatMap((project) => {
-            return project.tasks.filter((task) => task?.assignee?.id === userId);
-        });
+        // const currentWorkspaceTasks = currentWorkspace.projects?.flatMap((project) => {
+        //     return project.tasks.filter((task) => task?.assignee?.id === userId);
+        // });
 
-        setMyTasks(currentWorkspaceTasks);
+        setMyTasks(tasks);
+        fetchTasks({projectId: currentWorkspace.id, userId:user.id})
     }
 
     useEffect(() => {

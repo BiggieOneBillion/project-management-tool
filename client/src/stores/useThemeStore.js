@@ -1,6 +1,9 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
-export const useThemeStore = create((set) => ({
+export const useThemeStore = create(
+  persist(
+    (set) => ({
   // State
   theme: 'light',
 
@@ -27,4 +30,10 @@ export const useThemeStore = create((set) => ({
       }
     }
   },
-}));
+}),
+    {
+      name: 'theme-storage',
+      storage: createJSONStorage(() => sessionStorage),
+    }
+  )
+);

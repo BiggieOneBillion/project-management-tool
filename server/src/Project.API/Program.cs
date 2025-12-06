@@ -35,6 +35,7 @@ builder.Services.AddSwaggerGen(options =>
 // - MediatR (CQRS Commands & Queries)
 // - FluentValidation (Input validation)
 // - AutoMapper (Entity-to-DTO mapping)
+// - Authentication Services (JWT, Password)
 builder.Services.AddApplication();
 
 // INFRASTRUCTURE Layer - Registers:
@@ -42,6 +43,31 @@ builder.Services.AddApplication();
 // - Repositories (Data access)
 // - Database connection
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// ============================================================================
+// AUTHENTICATION & AUTHORIZATION
+// ============================================================================
+
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
+                System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"] ?? 
+                    throw new InvalidOperationException("JWT Secret not configured"))
+            ),
+            ClockSkew = TimeSpan.Zero // Remove default 5 minute tolerance
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 // ============================================================================
 // CORS CONFIGURATION
@@ -113,7 +139,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-// Enable Authorization (for future JWT implementation)
+// Enable Authentication & Authorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Map Controllers

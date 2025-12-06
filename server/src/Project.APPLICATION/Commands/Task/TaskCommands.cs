@@ -11,7 +11,8 @@ public record CreateTaskCommand(
     string Priority,
     string Status,
     string? AssigneeId,
-    DateTime DueDate
+    DateTime DueDate,
+    string UserId
 ) : IRequest<TaskDto>;
 
 public record UpdateTaskCommand(
@@ -22,9 +23,10 @@ public record UpdateTaskCommand(
     string Type,
     string Priority,
     string? AssigneeId,
-    DateTime? DueDate
+    DateTime? DueDate,
+    string UserId
 ) : IRequest<TaskDto>;
 
-public record DeleteTaskCommand(string Id) : IRequest<Unit>;
+public record DeleteTaskCommand(string Id, string UserId) : IRequest<Unit>;
 
 public record BulkDeleteTasksCommand(List<string> TaskIds) : IRequest<int>;

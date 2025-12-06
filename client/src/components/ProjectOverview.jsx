@@ -4,6 +4,7 @@ import { ArrowRight, Calendar, UsersIcon, FolderOpen } from "lucide-react";
 import { format } from "date-fns";
 import CreateProjectDialog from "./CreateProjectDialog";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
+import { useProjectStore } from "../stores/useProjectStore";
 
 const ProjectOverview = () => {
     const statusColors = {
@@ -20,12 +21,19 @@ const ProjectOverview = () => {
         HIGH: "border-green-300 text-green-700 dark:border-green-500 dark:text-green-400",
     };
 
-    const currentWorkspace = useWorkspaceStore((state) => state?.currentWorkspace || null);
+    const {currentWorkspace} = useWorkspaceStore((state) => state);
+
+    const {fetchProjects, projects:WorkspaceProjects} = useProjectStore((state) => state);
+
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [projects, setProjects] = useState([]);
+    // const [projects, setProjects] = useState([]);
+
+    // useEffect(() => {
+    //     setProjects(WorkspaceProjects || []);
+    // }, [WorkspaceProjects]);
 
     useEffect(() => {
-        setProjects(currentWorkspace?.projects || []);
+        fetchProjects(currentWorkspace?.id, true); // Include tasks for stats
     }, [currentWorkspace]);
 
     return currentWorkspace && (
@@ -38,7 +46,7 @@ const ProjectOverview = () => {
             </div>
 
             <div className="p-0">
-                {projects.length === 0 ? (
+                {WorkspaceProjects.length === 0 ? (
                     <div className="p-12 text-center">
                         <div className="w-16 h-16 mx-auto mb-4 bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-500 rounded-full flex items-center justify-center">
                             <FolderOpen size={32} />
@@ -51,7 +59,7 @@ const ProjectOverview = () => {
                     </div>
                 ) : (
                     <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                        {projects.slice(0, 5).map((project) => (
+                        {WorkspaceProjects.slice(0, 5).map((project) => (
                             <Link key={project.id} to={`/projectsDetail?id=${project.id}&tab=tasks`} className="block p-6 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
                                 <div className="flex items-start justify-between mb-3">
                                     <div className="flex-1">

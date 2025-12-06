@@ -17,13 +17,13 @@ public class ProjectsController : ControllerBase
     }
     
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? workspaceId)
+    public async Task<IActionResult> GetAll([FromQuery] string? workspaceId, [FromQuery] bool includeTasks = false)
     {
         try
         {
             if (!string.IsNullOrEmpty(workspaceId))
             {
-                var query = new GetWorkspaceProjectsQuery(workspaceId);
+                var query = new GetWorkspaceProjectsQuery(workspaceId, includeTasks);
                 var projects = await _mediator.Send(query);
                 return Ok(new { success = true, data = projects });
             }
@@ -102,6 +102,25 @@ public class ProjectsController : ControllerBase
             var command = new DeleteProjectCommand(id);
             await _mediator.Send(command);
             return Ok(new { success = true, message = "Project deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
+    }
+    
+    [HttpGet("{id}/members")]
+    public async Task<IActionResult> GetProjectMembers(string id)
+    {
+        try
+        {
+            var query = new GetProjectByIdQuery(Id:id, IncludeTasks: false, IncludeMembers: true);
+            var project = await _mediator.Send(query);
+            
+            if (project == null)
+                return NotFound(new { success = false, message = "Project not found" });
+            
+            return Ok(new { success = true, data = project.Members });
         }
         catch (Exception ex)
         {

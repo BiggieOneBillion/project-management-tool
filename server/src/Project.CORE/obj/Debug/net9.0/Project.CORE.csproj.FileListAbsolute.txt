@@ -1,12 +1,12 @@
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/bin/Debug/net9.0/Project.CORE.deps.json
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/bin/Debug/net9.0/Project.CORE.dll
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/bin/Debug/net9.0/Project.CORE.pdb
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/obj/Debug/net9.0/Project.CORE.GeneratedMSBuildEditorConfig.editorconfig
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/obj/Debug/net9.0/Project.CORE.AssemblyInfoInputs.cache
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/obj/Debug/net9.0/Project.CORE.AssemblyInfo.cs
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/obj/Debug/net9.0/Project.CORE.csproj.CoreCompileInputs.cache
-/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/bin/Debug/net9.0/Project.CORE.deps.json
-/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/bin/Debug/net9.0/Project.CORE.dll
-/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/bin/Debug/net9.0/Project.CORE.pdb
+/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/obj/Debug/net9.0/Project.CORE.sourcelink.json
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/obj/Debug/net9.0/Project.CORE.dll
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/obj/Debug/net9.0/refint/Project.CORE.dll
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/obj/Debug/net9.0/Project.CORE.pdb
 /Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/obj/Debug/net9.0/ref/Project.CORE.dll
-/Users/chukwuchinwendu/Downloads/project-management-main/server/src/Project.CORE/obj/Debug/net9.0/Project.CORE.sourcelink.json

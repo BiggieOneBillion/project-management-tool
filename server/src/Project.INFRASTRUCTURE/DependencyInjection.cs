@@ -13,6 +13,9 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // Configure Npgsql to handle DateTime conversion to UTC
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+        
         // Database
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(
@@ -25,6 +28,7 @@ public static class DependencyInjection
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<ITaskRepository, TaskRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IInvitationRepository, InvitationRepository>();
         
         return services;
     }

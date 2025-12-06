@@ -1,18 +1,35 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Mail, UserPlus } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
+import { useProjectStore } from "../stores/useProjectStore";
+import { projectService } from "../services";
+import toast from "react-hot-toast";
 
 const AddProjectMember = ({ isDialogOpen, setIsDialogOpen }) => {
 
     const [searchParams] = useSearchParams();
 
+    const [members, setMembers] = useState([])
+
     const id = searchParams.get('id');
 
     const currentWorkspace = useWorkspaceStore((state) => state?.currentWorkspace || null);
 
-    const project = currentWorkspace?.projects.find((p) => p.id === id);
-    const projectMembersEmails = project?.members.map((member) => member.user.email);
+    const { projects } = useProjectStore(state => state)
+
+    const project = projects.find((p) => p.id === id);
+
+    const getProjectMembers = async () => {
+        try {
+            const response = await projectService.getProjectMembers(project.id); 
+            setMembers(response.data);
+        } catch (error) {
+            console.log(error)
+            toast.error("Failed to fetch project members");
+            setMembers([])
+        } 
+    }
 
     const [email, setEmail] = useState('');
     const [isAdding, setIsAdding] = useState(false);
@@ -21,6 +38,10 @@ const AddProjectMember = ({ isDialogOpen, setIsDialogOpen }) => {
         e.preventDefault();
         
     };
+
+    useEffect(() => {
+        getProjectMembers();
+    }, [project]);
 
     if (!isDialogOpen) return null;
 
@@ -32,7 +53,7 @@ const AddProjectMember = ({ isDialogOpen, setIsDialogOpen }) => {
                     <h2 className="text-xl font-bold flex items-center gap-2">
                         <UserPlus className="size-5 text-zinc-900 dark:text-zinc-200" /> Add Member to Project
                     </h2>
-                    {currentWorkspace && (
+                    {project && (
                         <p className="text-sm text-zinc-700 dark:text-zinc-400">
                             Adding to Project: <span className="text-blue-600 dark:text-blue-400">{project.name}</span>
                         </p>
@@ -51,8 +72,7 @@ const AddProjectMember = ({ isDialogOpen, setIsDialogOpen }) => {
                             {/* List All non project members from current workspace */}
                             <select value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10 mt-1 w-full rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-200 text-sm placeholder-zinc-400 dark:placeholder-zinc-500 py-2 focus:outline-none focus:border-blue-500" required >
                                 <option value="">Select a member</option>
-                                {currentWorkspace?.members
-                                    .filter((member) => !projectMembersEmails.includes(member.user.email))
+                                {members
                                     .map((member) => (
                                         <option key={member.user.id} value={member.user.email}> {member.user.email} </option>
                                     ))}

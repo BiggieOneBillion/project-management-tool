@@ -2,13 +2,16 @@ import { useState } from "react";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
+import { taskService } from "../services";
 
 export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, projectId }) {
     const currentWorkspace = useWorkspaceStore((state) => state?.currentWorkspace || null);
+    const fetchWorkspaceById = useWorkspaceStore((state) => state.fetchWorkspaceById);
     const project = currentWorkspace?.projects.find((p) => p.id === projectId);
     const teamMembers = project?.members || [];
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState(null);
     const [formData, setFormData] = useState({
         title: "",
         description: "",
@@ -21,14 +24,62 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError(null);
+        setIsSubmitting(true);
 
+        try {
+            // Prepare task data for backend
+            const taskData = {
+                Title: formData.title,
+                Description: formData.description || null,
+                Type: formData.type,
+                Status: formData.status,
+                Priority: formData.priority,
+                ProjectId: projectId,
+                AssigneeId: formData.assigneeId || null,
+                DueDate: formData.due_date || null,
+            };
 
+            // Create the task
+            await taskService.create(taskData);
+
+            // Reset form
+            setFormData({
+                title: "",
+                description: "",
+                type: "TASK",
+                status: "TODO",
+                priority: "MEDIUM",
+                assigneeId: "",
+                due_date: "",
+            });
+
+            // Refresh workspace to get updated tasks
+            if (currentWorkspace?.id) {
+                await fetchWorkspaceById(currentWorkspace.id, true, true);
+            }
+
+            // Close dialog
+            setShowCreateTask(false);
+        } catch (err) {
+            console.error("Failed to create task:", err);
+            setError(err.message || "Failed to create task. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return showCreateTask ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 dark:bg-black/60 backdrop-blur">
             <div className="bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 rounded-lg shadow-lg w-full max-w-md p-6 text-zinc-900 dark:text-white">
                 <h2 className="text-xl font-bold mb-4">Create New Task</h2>
+
+                {/* Error Message */}
+                {error && (
+                    <div className="mb-4 p-3 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
+                        {error}
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Title */}
