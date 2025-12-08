@@ -18,19 +18,20 @@ import { useWorkspaceStore } from "../stores/useWorkspaceStore";
 import { useProjectStore } from "../stores/useProjectStore";
 import { useTaskStore } from "../stores/useTaskStore";
 import { useAuthStore } from "../stores/useAuthStore";
+import { useWorkspaces } from "../hooks";
+import InvitationBanner from "../components/InvitationBanner";
 
 const Dashboard = () => {
-  // const user = { fullName: "User", id: "user_1" }; // Placeholder user object
   const {user} = useAuthStore(state => state)
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+   const navigate = useNavigate();
 
-  const {loading:workspacesLoading, fetchWorkspaces } = useWorkspaceStore((state) => state);
+  const {loading:workspacesLoading, error, data:workspacess} = useWorkspaces(user?.id);
   const {loading:projectsLoading} = useProjectStore((state) => state);
   const {loading:tasksLoading} = useTaskStore((state) => state);
-
-  console.log(user)
+  const {workspaces} = useWorkspaceStore((state) => state)
 
   // Check for create=workspace query parameter
   useEffect(() => {
@@ -41,23 +42,11 @@ const Dashboard = () => {
     }
   }, [searchParams, setSearchParams]);
 
-  useEffect(()=>{
-    fetchWorkspaces(user?.id);
-  },[])
+  if (error) {
+    toast.error(error?.message || "Failed to load workspaces");
+  }
 
-//   useEffect(() => {
-//     // Only fetch if needed (no data, not loading, or cache expired)
-//     if (shouldFetchWorkspaces({ workspace: workspaceState })) {
-//       dispatch(fetchWorkspaces(user.id))
-//         .unwrap()
-//         .catch((error) => {
-//           toast.error(error || "Failed to load workspaces");
-//         });
-//     }
-//   }, [dispatch]); // dispatch is stable and won't cause re-renders
-
-  const isLoading = workspacesLoading 
-  // || projectsLoading || tasksLoading;
+  const isLoading = workspacesLoading;
 
   if (isLoading) {
     return (
@@ -72,8 +61,13 @@ const Dashboard = () => {
     );
   }
 
+  // No need to check for workspaces here - WorkspaceProtectedRoute handles this
+
   return (
     <div className="max-w-6xl mx-auto">
+      {/* Invitation Banner */}
+      <InvitationBanner />
+
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 ">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-1">

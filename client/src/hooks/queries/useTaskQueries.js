@@ -6,13 +6,11 @@ import { useTaskStore } from '../../stores/useTaskStore';
  * Fetch all tasks for a project
  */
 export function useProjectTasks(projectId) {
-  const setTasks = useTaskStore(state => state.setTasks);
   
   return useQuery({
     queryKey: ['tasks', 'project', projectId],
     queryFn: async () => {
       const response = await taskService.getAll({ projectId });
-      setTasks(response.data);
       return response.data;
     },
     enabled: !!projectId,
@@ -47,5 +45,19 @@ export function useUserTasks(userId) {
       return response.data;
     },
     enabled: !!userId,
+  });
+}
+
+/**
+ * Fetch user's assigned tasks by workspace id
+ */
+export function useUserTasksByWorkspaceId(workspaceId, userId) {
+  return useQuery({
+    queryKey: ['tasks', 'user', userId, workspaceId],
+    queryFn: async () => {
+      const response = await taskService.getByWorkspaceId(workspaceId, userId);
+      return response.data?.data;
+    },
+    enabled: !!userId &&  !!workspaceId,
   });
 }

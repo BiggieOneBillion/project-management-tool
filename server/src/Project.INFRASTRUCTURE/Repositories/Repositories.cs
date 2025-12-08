@@ -162,7 +162,12 @@ public class TaskRepository : Repository<TaskEntity>, ITaskRepository
             .Where(t => t.ProjectId == projectId)
             .ToListAsync();
     }
-    
+
+    public Task<IEnumerable<TaskEntity>> GetTasksForUserInWorkspaceAsync(string WorkspaceId)
+    {
+        throw new NotImplementedException();
+    }
+
     public async Task<IEnumerable<TaskEntity>> GetUserTasksAsync(string userId)
     {
         return await _context.Tasks

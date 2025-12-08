@@ -4,6 +4,7 @@ import ProjectCard from "../components/ProjectCard";
 import CreateProjectDialog from "../components/CreateProjectDialog";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
 import { useProjectStore } from "../stores/useProjectStore";
+import { useProjects } from "../hooks/queries/useProjectQueries";
 
 export default function Projects() {
 //   const projects = useWorkspaceStore(
@@ -13,12 +14,15 @@ export default function Projects() {
   const conrrent = useWorkspaceStore((state) => state?.currentWorkspace);
 
   const {
-    fetchProjects,
-    projects: workspaceProjects,
-    loading: loadingProject,
-  } = useProjectStore((state) => state);
+    data,
+    isLoading: loadingProject,
+  } = useProjects(conrrent?.id);
 
-//   console.log("CURRENT WORK SPACE", workspaceProjects);
+  const {projects:workspaceProjects} = useProjectStore(state => state)
+
+  
+
+  console.log("CURRENT WORK SPACE", workspaceProjects);
 
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,7 +33,7 @@ export default function Projects() {
   });
 
   const filterProjects = () => {
-    let filtered = workspaceProjects;
+    let filtered = data || workspaceProjects;
 
     if (searchTerm) {
       filtered = filtered.filter(
@@ -54,13 +58,13 @@ export default function Projects() {
     setFilteredProjects(filtered);
   };
 
-  useEffect(()=>{
-    fetchProjects(conrrent?.id);
-  },[])
-
   useEffect(() => {
     filterProjects();
-  }, [workspaceProjects, searchTerm, filters]);
+  }, [ searchTerm, filters]);
+
+  if (loadingProject) {
+    return <p>Loading....</p>
+  }
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">

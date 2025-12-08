@@ -4,96 +4,69 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeftIcon, CalendarIcon, MessageCircle, PenIcon } from "lucide-react";
 import { assets } from "../assets/assets";
-import { useWorkspaceStore } from "../stores/useWorkspaceStore";
-import { useTaskStore } from "../stores/useTaskStore";
-import { useProjectStore } from "../stores/useProjectStore";
-import { useCommentStore } from "../stores/useCommentStore";
+import { useTask, useProject, useTaskComments, useCreateComment } from "../hooks";
 
 const TaskDetails = () => {
   const [searchParams] = useSearchParams();
   const projectId = searchParams.get("projectId");
   const taskId = searchParams.get("taskId");
 
-  const user = { id: "user_1" };
-  const [task, setTask] = useState(null);
-  const [project, setProject] = useState(null);
-  const [comments, setComments] = useState([]);
+  const { data: currentTask, isLoading: loadingTask } = useTask(taskId);
+  const { data: project, isLoading: loadingProject } = useProject(projectId);
+  const { data: comments = [], isLoading: loadingComments } = useTaskComments(taskId);
+  const { mutate: createComment, isPending: isAddingComment } = useCreateComment();
+
+  // const [comments, setComments] = useState([]); // Removed local state
   const [newComment, setNewComment] = useState("");
  const navigate = useNavigate();
 
-  const {
-    fetchTaskComments,
-    loading: loadingComments,
-  } = useCommentStore((state) => state);
+  // Removed useCommentStore hooks
 
-  const { projects } = useProjectStore((state) => state);
+  // React Query Hooks
+  // const { data: currentTask, isLoading: loadingTask } = useTask(taskId); // Moved up
+  // const { data: project, isLoading: loadingProject } = useProject(projectId); // Moved up
 
-  const {
-    fetchTaskById,
-    loading: loadingTask,
-    currentTask,
-  } = useTaskStore((state) => state);
+  // const { projects } = useProjectStore((state) => state); // Removed
+  // const { fetchTaskById, loading: loadingTask, currentTask } = useTaskStore((state) => state); // Removed
 
   const fetchComments = async () => {};
+  
+  // Removed manual fetchTaskDetails and syncing effects
 
-
-  const fetchTaskDetails = async () => {
-    if (!projectId || !taskId) return;
-
-    const proj = projects.find((p) => p.id === projectId);
-    if (!proj) return;
-
-    setTask(currentTask);
-    setProject(proj);
-  };
-
-  const handleAddComment = async () => {
+  const handleAddComment = () => {
     if (!newComment.trim()) return;
-
-    try {
-      toast.loading("Adding comment...");
-
-      //  Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const dummyComment = {
-        id: Date.now(),
-        user: { id: 1, name: "User", image: assets.profile_img_a },
-        content: newComment,
-        createdAt: new Date(),
-      };
-
-      setComments((prev) => [...prev, dummyComment]);
-      setNewComment("");
-      toast.dismissAll();
-      toast.success("Comment added.");
-    } catch (error) {
-      toast.dismissAll();
-      toast.error(error?.response?.data?.message || error.message);
-      console.error(error);
-    }
+    
+    // We need user info? For optimistic update? 
+    // The mutation handles toast and invalidation.
+    // For now simple mutation.
+    
+    createComment({ 
+        taskId, 
+        data: { 
+            content: newComment,
+            // Backend likely infers user from token
+        } 
+    }, {
+        onSuccess: () => {
+            setNewComment("");
+        }
+    });
   };
 
-  useEffect(() => {
-    fetchTaskById(taskId);
-    fetchTaskComments(taskId);
-  }, []);
+  // Removed useEffect fetching comments manually
 
+  // Removed syncing effect for local state task/project
   useEffect(() => {
-    fetchTaskDetails();
+    if (taskId) {
+      // fetchComments(); // fetchComments is empty
+      // const interval = setInterval(() => {
+      //   fetchComments();
+      // }, 10000);
+      // return () => clearInterval(interval);
+    }
   }, [taskId]);
 
-  useEffect(() => {
-    if (taskId && task) {
-      fetchComments();
-      const interval = setInterval(() => {
-        fetchComments();
-      }, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [taskId, task]);
-
-  if (loadingTask)
+  if (loadingTask || loadingProject)
     return (
       <div className="text-gray-500 dark:text-zinc-400 px-4 py-6">
         Loading task details...

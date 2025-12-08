@@ -7,15 +7,23 @@ import { useProjectStore } from '../../stores/useProjectStore';
  */
 export function useProjects(workspaceId) {
   const setProjects = useProjectStore(state => state.setProjects);
+
+  if (!workspaceId) {
+    return {data: undefined, isLoading: true}
+  }
+  
+  if (!workspaceId.id) {
+    return {data: null, isLoading: false}
+  }
   
   return useQuery({
-    queryKey: ['projects', workspaceId],
+    queryKey: ['projects', workspaceId.id],
     queryFn: async () => {
-      const response = await projectService.getAll({ workspaceId });
+      const response = await projectService.getAll(workspaceId.id);
       setProjects(response.data);
-      return response.data;
+      return response;
     },
-    enabled: !!workspaceId,
+    enabled: !!workspaceId.id,
   });
 }
 

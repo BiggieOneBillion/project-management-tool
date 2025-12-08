@@ -17,84 +17,41 @@ export const useProjectStore = create(
   clearError: () => set({ error: null }),
 
   // Async actions
-  fetchProjects: async (workspaceId = null, includeTasks = false) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await projectService.getAll(workspaceId, includeTasks);
-      set({ projects: response.data, loading: false });
-    } catch (error) {
-      set({ 
-        loading: false, 
-        error: error.message || 'Failed to fetch projects' 
-      });
+  // Async actions removed (replaced by React Query hooks)
+  
+  // Setters for syncing
+  setProjects: (projects) => {
+    set({ projects, loading: false });
+    
+    // Sync currentProject if needed
+    const { currentProject } = get();
+    if (currentProject) {
+        const updated = projects.find(p => p.id === currentProject.id);
+        if (updated) {
+            set({ currentProject: updated });
+        }
     }
   },
 
-  fetchProjectById: async (id, includeTasks = false, includeMembers = false) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await projectService.getById(id, includeTasks, includeMembers);
-      set({ currentProject: response.data, loading: false });
-    } catch (error) {
-      set({ 
-        loading: false, 
-        error: error.message || 'Failed to fetch project' 
-      });
-    }
+  // Sync actions for optimistic updates (if needed)
+  addProject: (project) => {
+    set((state) => ({
+      projects: [...state.projects, project]
+    }));
   },
 
-  createProject: async (projectData) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await projectService.create(projectData);
-      set((state) => ({
-        projects: [...state.projects, response.data],
-        loading: false
-      }));
-    } catch (error) {
-      set({ 
-        loading: false, 
-        error: error.message || 'Failed to create project' 
-      });
-    }
+  updateProject: (project) => {
+    set((state) => ({
+      projects: state.projects.map((p) => p.id === project.id ? project : p),
+      currentProject: state.currentProject?.id === project.id ? project : state.currentProject
+    }));
   },
 
-  updateProject: async (id, data) => {
-    try {
-      const response = await projectService.update(id, data);
-      const project = response.data;
-      
-      set((state) => {
-        const projects = state.projects.map((p) => 
-          p.id === project.id ? project : p
-        );
-        
-        const currentProject = state.currentProject?.id === project.id 
-          ? project 
-          : state.currentProject;
-        
-        return { projects, currentProject };
-      });
-    } catch (error) {
-      set({ error: error.message || 'Failed to update project' });
-    }
-  },
-
-  deleteProject: async (id) => {
-    try {
-      await projectService.delete(id);
-      
-      set((state) => {
-        const projects = state.projects.filter((p) => p.id !== id);
-        const currentProject = state.currentProject?.id === id 
-          ? null 
-          : state.currentProject;
-        
-        return { projects, currentProject };
-      });
-    } catch (error) {
-      set({ error: error.message || 'Failed to delete project' });
-    }
+  deleteProject: (id) => {
+    set((state) => ({
+      projects: state.projects.filter((p) => p.id !== id),
+      currentProject: state.currentProject?.id === id ? null : state.currentProject
+    }));
   },
 }),
     {

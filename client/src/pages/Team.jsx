@@ -2,22 +2,26 @@ import { useEffect, useState } from "react";
 import { UsersIcon, Search, UserPlus, Shield, Activity, Clock, X } from "lucide-react";
 import InviteMemberDialog from "../components/InviteMemberDialog";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
-import { useTaskStore } from "../stores/useTaskStore";
-import { invitationService } from "../services";
+import { useWorkspaceMembers, useWorkspaceInvitations, useRevokeInvitation, useProjects } from "../hooks";
 
 const Team = () => {
 
     // const [tasks, setTasks] = useState([]);
-    const [tasksCount, setTasksCount] = useState(0);
+    // const [tasksCount, setTasksCount] = useState(0);
     const [searchTerm, setSearchTerm] = useState("");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [users, setUsers] = useState([]);
-    const [pendingInvitations, setPendingInvitations] = useState([]);
-    const [isLoadingInvitations, setIsLoadingInvitations] = useState(false);
-    const currentWorkspace = useWorkspaceStore((state) => state?.currentWorkspace || null);
-    const projects = currentWorkspace?.projects || [];
-    const {fetchTasks, tasks:workspaceTask} = useTaskStore(state => state)
     
+    // React Query Hooks
+    const currentWorkspace = useWorkspaceStore((state) => state?.currentWorkspace || null);
+    const workspaceId = currentWorkspace?.id;
+    
+    const { data: users = [] } = useWorkspaceMembers(workspaceId);
+    const { data: pendingInvitations = [], isLoading: isLoadingInvitations } = useWorkspaceInvitations(workspaceId);
+    const { data: projects = [] } = useProjects(workspaceId);
+    const { mutate: revokeInvitation } = useRevokeInvitation();
+
+    // Derived state
+    const tasksCount = projects?.reduce((acc, p) => acc + (p.taskCount || 0), 0);
 
     const filteredUsers = users.filter(
         (user) =>
@@ -25,38 +29,13 @@ const Team = () => {
             user?.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const fetchPendingInvitations = async () => {
-        if (!currentWorkspace?.id) return;
-        
-        setIsLoadingInvitations(true);
-        try {
-            const response = await invitationService.getWorkspaceInvitations(currentWorkspace.id);
-            setPendingInvitations(response.data || []);
-        } catch (error) {
-            console.error("Failed to fetch pending invitations:", error);
-        } finally {
-            setIsLoadingInvitations(false);
-        }
-    };
-
-    const handleRevokeInvitation = async (invitationId) => {
-        try {
-            await invitationService.revokeInvitation(invitationId);
-            // Refresh the invitations list
-            await fetchPendingInvitations();
-        } catch (error) {
-            console.error("Failed to revoke invitation:", error);
-        }
+    const handleRevokeInvitation = (invitationId) => {
+        revokeInvitation(invitationId);
     };
 
     console.log("CURRENT WORKSPACE", currentWorkspace)
 
-    useEffect(() => {
-        setUsers(currentWorkspace?.members || []);
-        // setTasks(currentWorkspace?.projects?.reduce((acc, project) => [...acc, ...project.tasks], []) || []);
-        setTasksCount(currentWorkspace?.projects?.reduce((acc, project) => acc + project.taskCount, 0) || 0);
-        fetchPendingInvitations();
-    }, [currentWorkspace]);
+    // Removed manual fetching and effects
 
     // console.log("Current Workspace Members:", currentWorkspace);
 
@@ -97,7 +76,7 @@ const Team = () => {
                         <div>
                             <p className="text-sm text-gray-500 dark:text-zinc-400">Active Projects</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">
-                                {projects.filter((p) => p.status !== "CANCELLED" && p.status !== "COMPLETED").length}
+                                {projects?.filter((p) => p.status !== "CANCELLED" && p.status !== "COMPLETED").length}
                             </p>
                         </div>
                         <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/10">

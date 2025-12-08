@@ -17,98 +17,46 @@ export const useTaskStore = create(
   clearError: () => set({ error: null }),
 
   // Async actions
-  fetchTasks: async (filters = {}) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await taskService.getAll(filters);
-      set({ tasks: response.data, loading: false });
-    } catch (error) {
-      set({ 
-        loading: false, 
-        error: error.message || 'Failed to fetch tasks' 
-      });
+  // Async actions removed (replaced by React Query hooks)
+  
+  // Setters for syncing
+  setTasks: (tasks) => {
+    set({ tasks, loading: false });
+    
+    // Sync currentTask if needed
+    const { currentTask } = get();
+    if (currentTask) {
+        const updated = tasks.find(t => t.id === currentTask.id);
+        if (updated) {
+            set({ currentTask: updated });
+        }
     }
   },
 
-  fetchTaskById: async (id, includeComments = false) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await taskService.getById(id, includeComments);
-      set({ currentTask: response.data, loading: false });
-    } catch (error) {
-      set({ 
-        loading: false, 
-        error: error.message || 'Failed to fetch task' 
-      });
-    }
+  addTask: (task) => {
+    set((state) => ({
+      tasks: [...state.tasks, task]
+    }));
   },
 
-  createTask: async (taskData) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await taskService.create(taskData);
-      set((state) => ({
-        tasks: [...state.tasks, response.data],
-        loading: false
-      }));
-    } catch (error) {
-      set({ 
-        loading: false, 
-        error: error.message || 'Failed to create task' 
-      });
-    }
+  updateTask: (task) => {
+    set((state) => ({
+      tasks: state.tasks.map((t) => t.id === task.id ? task : t),
+      currentTask: state.currentTask?.id === task.id ? task : state.currentTask
+    }));
   },
 
-  updateTask: async (id, data) => {
-    try {
-      const response = await taskService.update(id, data);
-      const task = response.data;
-
-      console.log("UPDATE RESULT", task)
-      
-      set((state) => {
-        const tasks = state.tasks.map((t) => 
-          t.id === task.id ? task : t
-        );
-        
-        const currentTask = state.currentTask?.id === task.id 
-          ? task 
-          : state.currentTask;
-        
-        return { tasks, currentTask };
-      });
-    } catch (error) {
-      set({ error: error.message || 'Failed to update task' });
-    }
+  deleteTask: (id) => {
+    set((state) => ({
+      tasks: state.tasks.filter((t) => t.id !== id),
+      currentTask: state.currentTask?.id === id ? null : state.currentTask
+    }));
   },
 
-  deleteTask: async (id) => {
-    try {
-      await taskService.delete(id);
-      
-      set((state) => {
-        const tasks = state.tasks.filter((t) => t.id !== id);
-        const currentTask = state.currentTask?.id === id 
-          ? null 
-          : state.currentTask;
-        
-        return { tasks, currentTask };
-      });
-    } catch (error) {
-      set({ error: error.message || 'Failed to delete task' });
-    }
-  },
-
-  bulkDeleteTasks: async (taskIds) => {
-    try {
-      await taskService.bulkDelete(taskIds);
-      
-      set((state) => ({
-        tasks: state.tasks.filter((t) => !taskIds.includes(t.id))
-      }));
-    } catch (error) {
-      set({ error: error.message || 'Failed to delete tasks' });
-    }
+  bulkDeleteTasks: (taskIds) => {
+    set((state) => ({
+      tasks: state.tasks.filter((t) => !taskIds.includes(t.id))
+    }));
   },
 }),
     {

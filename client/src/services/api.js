@@ -13,7 +13,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Get token from localStorage (where auth store persists it)
-    const authStorage = localStorage.getItem('auth-storage');
+    const authStorage = sessionStorage.getItem('auth-storage');
     if (authStorage) {
       try {
         const { state } = JSON.parse(authStorage);

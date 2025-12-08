@@ -16,9 +16,10 @@ import EditTaskDialog from "../components/EditTaskDialog";
 import ProjectCalendar from "../components/ProjectCalendar";
 import ProjectTasks from "../components/ProjectTasks";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
-import { useProjectStore } from "../stores/useProjectStore";
-import { useTaskStore } from "../stores/useTaskStore";
+
 import { useAuthStore } from "../stores/useAuthStore";
+import { useProject, useProjectTasks } from "../hooks";
+import { useTaskStore } from "../stores/useTaskStore";
 
 export default function ProjectDetail() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -27,16 +28,13 @@ export default function ProjectDetail() {
 
   const navigate = useNavigate();
 
-//   const projectss = useWorkspaceStore(
-//     (state) => state?.currentWorkspace?.projects || []
-//   );
-  const { projects } = useProjectStore((state) => state);
-  const { fetchTasks, tasks:ProjectTask } = useTaskStore((state) => state);
+  // Use React Query hooks
+  const { data: project, isLoading: isProjectLoading } = useProject(id, { includeMembers: true });
+  const { data: tasks = [], isLoading: isTasksLoading } = useProjectTasks(id);
+  
   const currentWorkspace = useWorkspaceStore((state) => state?.currentWorkspace || null);
   const user = useAuthStore((state) => state.user);
 
-  const [project, setProject] = useState(null);
-  const [tasks, setTasks] = useState([]);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [showEditTask, setShowEditTask] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -45,24 +43,9 @@ export default function ProjectDetail() {
   // Check if current user is workspace owner
   const isWorkspaceOwner = currentWorkspace?.ownerId === user?.id;
 
-//   console.log("PROJECTS", project);
-//   console.log("PROJECTS Task", ProjectTask);
-
-  useEffect(()=>{
-    fetchTasks({ projectId: id})
-  },[id])
-
   useEffect(() => {
     if (tab) setActiveTab(tab);
   }, [tab]);
-
-  useEffect(() => {
-    if (projects && projects.length > 0) {
-      const proj = projects.find((p) => p.id === id);
-      setProject(proj);
-      setTasks(ProjectTask || []);
-    }
-  }, [id, projects]);
 
   const statusColors = {
     PLANNING: "bg-zinc-200 text-zinc-900 dark:bg-zinc-600 dark:text-zinc-200",
@@ -73,6 +56,14 @@ export default function ProjectDetail() {
     COMPLETED: "bg-blue-200 text-blue-900 dark:bg-blue-500 dark:text-blue-900",
     CANCELLED: "bg-red-200 text-red-900 dark:bg-red-500 dark:text-red-900",
   };
+
+  if (isProjectLoading || isTasksLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   if (!project) {
     return (

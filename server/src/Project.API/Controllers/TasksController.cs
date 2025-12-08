@@ -51,6 +51,26 @@ public class TasksController : ControllerBase
         }
     }
     
+
+       [HttpGet("workspace/{workspaceId}")]
+    public async Task<IActionResult> GetAllTaskForUserInAWorkspace(
+        string workspaceId,
+        [FromQuery] string userId
+        )
+    {
+        try
+        {
+                var query = new GetTasksForUserInWorkspaceQuery(workspaceId, userId);
+                var tasks = await _mediator.Send(query);
+                return Ok(new { success = true, data = tasks });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
+    }
+    
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(string id, [FromQuery] bool includeComments = false)
     {

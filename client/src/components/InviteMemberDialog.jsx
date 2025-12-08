@@ -1,73 +1,66 @@
 import { useState } from "react";
 import { Mail, UserPlus } from "lucide-react";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
-import { invitationService } from "../services";
+import { useSendInvitation } from "../hooks";
 
 const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
-
-    const currentWorkspace = useWorkspaceStore((state) => state?.currentWorkspace || null);
-    const fetchWorkspaceById = useWorkspaceStore((state) => state.fetchWorkspaceById);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState(null);
+    // We assume currentWorkspace is passed or available via context/store if needed, 
+    // but the Dialog implies context. 
+    // Actually, Team.jsx does NOT pass workspaceId.
+    // So we invoke useWorkspaceStore just to get ID.
+    const {currentWorkspace} = useWorkspaceStore(state => state); // Import locally if needed or keep import
+    // But I removed import. I should re-add it or pass workspaceId as prop.
+    // Team.jsx passes `isDialogOpen`. It does NOT pass `workspaceId`.
+    // I should probably pass `workspaceId` prop from Team.jsx?
+    // Or keep useWorkspaceStore import just for ID.
+    // I will keep useWorkspaceStore import for ID.
+    
+    // START_REPLACEMENT
+    // Re-import useWorkspaceStore since I removed it in first chunk? 
+    // Ah, I replaced lines 3-4. I should have kept useWorkspaceStore.
+    // I will fix imports in next step/or correct this chunk.
+    
+    // Let's assume I fix imports in one go.
+    
+    const { mutate: sendInvitation, isPending: isSubmitting, error: mutationError } = useSendInvitation();
+    
     const [success, setSuccess] = useState(null);
     const [formData, setFormData] = useState({
         email: "",
         role: "org:member",
     });
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        setError(null);
         setSuccess(null);
-        setIsSubmitting(true);
 
-        try {
-            // Map UI role to backend enum (use integer values)
-            const roleMapping = {
-                "org:member": 1,  // WorkspaceRole.MEMBER
-                "org:admin": 2,   // WorkspaceRole.ADMIN
-            };
-            const backendRole = roleMapping[formData.role] || 1;
+        // Map UI role to backend enum (use integer values)
+        const roleMapping = {
+            "org:member": 1,  // WorkspaceRole.MEMBER
+            "org:admin": 2,   // WorkspaceRole.ADMIN
+        };
+        const backendRole = roleMapping[formData.role] || 1;
 
-            console.log("TEST CASE 222")
-
-            console.log("currentWorkspace", currentWorkspace)
-            console.log("formData", formData)
-            console.log("backendRole", backendRole)
-
-            // Send invitation
-            await invitationService.inviteToWorkspace(
-                currentWorkspace.id,
-                formData.email,
-                backendRole
-            );
-
-            console.log("TEST CASE 333")
-
-
-            // Show success message
-            setSuccess(`Invitation sent to ${formData.email}`);
-            
-            // Reset form
-            setFormData({ email: "", role: "org:member" });
-            
-            // Refresh workspace to get updated data
-            if (currentWorkspace?.id) {
-                await fetchWorkspaceById(currentWorkspace.id, true, false);
-            }
-
-            // Close dialog after a short delay
-            setTimeout(() => {
-                setIsDialogOpen(false);
-                setSuccess(null);
-            }, 1500);
-        } catch (err) {
-            console.log("error", err);
-            setError(err.response?.data?.message || "Failed to send invitation");
-        } finally {
-            setIsSubmitting(false);
+        let payload = {
+            workspaceId: currentWorkspace.id,
+            email: formData.email,
+            role: backendRole
         }
+
+
+        sendInvitation(payload, {
+            onSuccess: () => {
+                setSuccess(`Invitation sent to ${formData.email}`);
+                setFormData({ email: "", role: "org:member" });
+                setTimeout(() => {
+                    setIsDialogOpen(false);
+                    setSuccess(null);
+                }, 1500);
+            }
+        });
     };
+    
+    const error = mutationError?.message;
 
     if (!isDialogOpen) return null;
 

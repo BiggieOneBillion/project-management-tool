@@ -3,9 +3,7 @@ import { Plus, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import AddProjectMember from "./AddProjectMember";
 import toast from "react-hot-toast";
-import { projectService } from "../services";
-import { useProjectStore } from "../stores/useProjectStore";
-import { useWorkspaceStore } from "../stores/useWorkspaceStore";
+import { useUpdateProject, useProjectMembers } from "../hooks";
 
 export default function ProjectSettings({ project }) {
     console.log("PROJECT INFO", project)
@@ -38,10 +36,10 @@ export default function ProjectSettings({ project }) {
     });
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const {fetchProjects} = useProjectStore(state => state)
-    const {currentWorkspace} = useWorkspaceStore(state => state)
+    
+    // React Query Hooks
+    const { mutate: updateProject, isPending: isSubmitting } = useUpdateProject();
+    const { data: members = [] } = useProjectMembers(project?.id);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -61,55 +59,25 @@ export default function ProjectSettings({ project }) {
             return;
         }
 
-        setIsSubmitting(true);
-        try {
-            // Prepare data for backend (PascalCase)
-            const updateData = {
-                Id: project.id,
-                Name: formData.name,
-                Description: formData.description,
-                Status: formData.status,
-                Priority: formData.priority,
-                Progress: formData.progress,
-                StartDate: formData.startDate,
-                EndDate: formData.endDate,
-            };
+        // Prepare data for backend (PascalCase)
+        const updateData = {
+            Id: project.id,
+            Name: formData.name,
+            Description: formData.description,
+            Status: formData.status,
+            Priority: formData.priority,
+            Progress: formData.progress,
+            StartDate: formData.startDate,
+            EndDate: formData.endDate,
+        };
 
-            console.log("UPDATE INFO", updateData)
-
-
-
-            await projectService.update(project.id, updateData);
-
-            await fetchProjects(currentWorkspace.id)
-
-            toast.success("Project updated successfully");
-        } catch (error) {
-            console.error("Failed to update project:", error);
-            toast.error(error?.message || "Failed to update project");
-        } finally {
-            setIsSubmitting(false);
-        }
+        updateProject({
+            id: project.id,
+            data: updateData
+        });
     };
 
-    const getProjectMembers = async () => {
-        try {
-            const response = await projectService.getProjectMembers(project.id); 
-            // console.log("MEMBERS", response)
-            setMembers(response.data);
-        } catch (error) {
-            console.log(error)
-            toast.error("Failed to fetch project members");
-            setMembers([])
-        }
-        
-    };
-
-    const [members, setMembers] = useState([]);
-
-    useEffect(() => {
-        getProjectMembers();
-    }, [project]);
+    // Removed manual member fetching and effects since we use hooks
 
     useEffect(() => {
         if (project) setFormData(project);

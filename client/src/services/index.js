@@ -13,6 +13,7 @@ export const workspaceService = {
   },
 
   create: async (data) => {
+    console.log("WORKSPACE DATA----")
     return await api.post('/workspaces', data);
   },
 
@@ -26,11 +27,10 @@ export const workspaceService = {
 };
 
 export const projectService = {
-  getAll: async (workspaceId = null, includeTasks = false) => {
+  getAll: async (workspaceId = null, includeTasks = true) => {
     const params = {};
-    if (workspaceId) params.workspaceId = workspaceId;
     if (includeTasks) params.includeTasks = includeTasks;
-    return await api.get('/projects', { params });
+    return await api.get(`/projects?workspaceId=${workspaceId}`, { params });
   },
 
   getById: async (id, includeTasks = false, includeMembers = false) => {
@@ -70,6 +70,10 @@ export const taskService = {
     return await api.get(`/tasks/${id}`, {
       params: { includeComments },
     });
+  },
+
+   getByWorkspaceId: async (workspaceId, userId) => {
+    return await api.get(`/tasks/workspace/${workspaceId}?userId=${userId}`);
   },
 
   create: async (data) => {
@@ -161,12 +165,16 @@ export const authService = {
 };
 
 export const invitationService = {
-  inviteToWorkspace: async (workspaceId, email, role) => {
-    return await api.post('/invitations/workspace', {
-      WorkspaceId: workspaceId,
-      Email: email,
-      Role: role,
-    });
+  inviteToWorkspace: async (params) => {
+    console.log("INVITE WORK PEOPLE", params)
+    const payload = {
+      WorkspaceId: params.workspaceId,
+      Email: params.email,
+      Role: params.role,
+    }
+
+    console.log("axios PAYLOAD", payload)
+    return await api.post('/invitations/workspace', payload);
   },
 
   getWorkspaceInvitations: async (workspaceId, status = 'PENDING') => {

@@ -1,5 +1,14 @@
 // Placeholder for comment queries
+import { useQuery } from '@tanstack/react-query';
+import { commentService } from '../../services';
+
 export function useTaskComments(taskId) {
-  // Will be implemented
-  return { data: [], isLoading: false };
+  return useQuery({
+    queryKey: ['comments', 'task', taskId],
+    queryFn: async () => {
+      const response = await commentService.getTaskComments(taskId);
+      return response.data;
+    },
+    enabled: !!taskId,
+  });
 }

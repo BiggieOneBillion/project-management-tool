@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { useWorkspaceStore } from '../stores/useWorkspaceStore';
 import { useAuthStore } from '../stores/useAuthStore';
+import { useCreateWorkspace } from '../hooks';
 import toast from 'react-hot-toast';
 
 export default function CreateWorkspaceModal({ isOpen, onClose }) {
@@ -10,9 +10,8 @@ export default function CreateWorkspaceModal({ isOpen, onClose }) {
     description: '',
     imageUrl: '',
   });
-  const [loading, setLoading] = useState(false);
   
-  const { createWorkspace, fetchWorkspaces } = useWorkspaceStore();
+  const { mutate: createWorkspace, isPending } = useCreateWorkspace();
   const { user } = useAuthStore();
 
   const handleChange = (e) => {
@@ -22,7 +21,7 @@ export default function CreateWorkspaceModal({ isOpen, onClose }) {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     
     if (!formData.name.trim()) {
@@ -30,33 +29,21 @@ export default function CreateWorkspaceModal({ isOpen, onClose }) {
       return;
     }
 
-    setLoading(true);
-    try {
-      // Generate slug from name (lowercase, replace spaces with hyphens)
-      const slug = formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-      
-      await createWorkspace({
-        name: formData.name,
-        slug: slug,
-        description: formData.description || null,
-        ownerId: user?.id,
-      });
-      
-      toast.success('Workspace created successfully!');
-      
-      // Refresh workspaces list
-      if (user?.id) {
-        await fetchWorkspaces(user.id);
+    // Generate slug from name
+    const slug = formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    
+    createWorkspace({
+      name: formData.name,
+      slug: slug,
+      description: formData.description || null,
+      ownerId: user?.id,
+    }, {
+      onSuccess: () => {
+        // Reset form and close modal
+        setFormData({ name: '', description: '', imageUrl: '' });
+        onClose();
       }
-      
-      // Reset form and close modal
-      setFormData({ name: '', description: '', imageUrl: '' });
-      onClose();
-    } catch (error) {
-      toast.error(error.message || 'Failed to create workspace');
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   if (!isOpen) return null;
@@ -142,10 +129,10 @@ export default function CreateWorkspaceModal({ isOpen, onClose }) {
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={isPending}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Creating...' : 'Create Workspace'}
+              {isPending ? 'Creating...' : 'Create Workspace'}
             </button>
           </div>
         </form>
