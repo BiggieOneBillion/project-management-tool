@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { UsersIcon, Search, UserPlus, Shield, Activity, Clock, X } from "lucide-react";
 import InviteMemberDialog from "../components/InviteMemberDialog";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
+import { useAuthStore } from "../stores/useAuthStore";
 import { useWorkspaceMembers, useWorkspaceInvitations, useRevokeInvitation, useProjects } from "../hooks";
 import TeamSkeleton from "../components/skeletons/TeamSkeleton";
 
@@ -14,12 +15,19 @@ const Team = () => {
     
     // React Query Hooks
     const currentWorkspace = useWorkspaceStore((state) => state?.currentWorkspace || null);
+    const { user } = useAuthStore();
     const workspaceId = currentWorkspace?.id;
     
     const { data: users = [] } = useWorkspaceMembers(workspaceId);
     const { data: pendingInvitations = [], isLoading: isLoadingInvitations } = useWorkspaceInvitations(workspaceId);
     const { data: projects = [] } = useProjects(workspaceId);
     const { mutate: revokeInvitation } = useRevokeInvitation();
+
+    // Check if current user is owner or admin
+    const isOwner = currentWorkspace?.ownerId === user?.id;
+    const currentMember = users.find(m => m.userId === user?.id);
+    const isAdmin = currentMember?.role === 'ADMIN' || currentMember?.role === 2; // 2 is ADMIN enum value
+    const canManageInvitations = isOwner || isAdmin;
 
     // Derived state
     const tasksCount = projects?.reduce((acc, p) => acc + (p.taskCount || 0), 0);
@@ -56,9 +64,11 @@ const Team = () => {
                         Manage team members and their contributions
                     </p>
                 </div>
-                <button onClick={() => setIsDialogOpen(true)} className="flex items-center px-5 py-2 rounded text-sm bg-gradient-to-br from-blue-500 to-blue-600 hover:opacity-90 text-white transition" >
-                    <UserPlus className="w-4 h-4 mr-2" /> Invite Member
-                </button>
+                {canManageInvitations && (
+                    <button onClick={() => setIsDialogOpen(true)} className="flex items-center px-5 py-2 rounded text-sm bg-gradient-to-br from-blue-500 to-blue-600 hover:opacity-90 text-white transition" >
+                        <UserPlus className="w-4 h-4 mr-2" /> Invite Member
+                    </button>
+                )}
                 <InviteMemberDialog isDialogOpen={isDialogOpen} setIsDialogOpen={setIsDialogOpen} />
             </div>
 
@@ -152,13 +162,15 @@ const Team = () => {
                                             {new Date(invitation.createdAt).toLocaleDateString()}
                                         </td>
                                         <td className="px-6 py-3 whitespace-nowrap">
-                                            <button
-                                                onClick={() => handleRevokeInvitation(invitation.id)}
-                                                className="flex items-center gap-1 px-3 py-1 text-xs rounded-md bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-500/30 transition"
-                                            >
-                                                <X className="w-3 h-3" />
-                                                Revoke
-                                            </button>
+                                            {canManageInvitations && (
+                                                <button
+                                                    onClick={() => handleRevokeInvitation(invitation.id)}
+                                                    className="flex items-center gap-1 px-3 py-1 text-xs rounded-md bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-500/30 transition"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                    Revoke
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
