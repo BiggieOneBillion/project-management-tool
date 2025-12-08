@@ -56,6 +56,9 @@ public class MappingProfile : Profile
         // Invitation mappings
         CreateMap<Invitation, DTOs.Invitation.InvitationDto>()
             .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))
-            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+            .ForMember(dest => dest.WorkspaceName, opt => opt.MapFrom(src => src.Workspace != null ? src.Workspace.Name : null))
+            .ForMember(dest => dest.ProjectName, opt => opt.MapFrom(src => src.Project != null ? src.Project.Name : null))
+            .ForMember(dest => dest.InvitedBy, opt => opt.MapFrom(src => src.InvitedBy != null ? src.InvitedBy.Name : null));
     }
 }

@@ -20,8 +20,8 @@ export function useProjects(workspaceId) {
     queryKey: ['projects', workspaceId.id],
     queryFn: async () => {
       const response = await projectService.getAll(workspaceId.id);
-      setProjects(response.data);
-      return response;
+      // setProjects(response.data);
+      return response.data;
     },
     enabled: !!workspaceId.id,
   });

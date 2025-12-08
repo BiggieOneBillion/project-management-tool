@@ -191,13 +191,19 @@ public class InvitationsController : ControllerBase
     {
         try
         {
-            // This endpoint can be used by non-authenticated users to check their invitations
-            // In a real app, you might want to send this via email or require some verification
-            
+            if (string.IsNullOrEmpty(email))
+            {
+                return BadRequest(new { success = false, message = "Email is required" });
+            }
+
+            var query = new GetUserPendingInvitationsQuery(email);
+            var invitations = await _mediator.Send(query);
+
             return Ok(new
             {
                 success = true,
-                message = "Use the invitation token from your email to accept"
+                data = invitations,
+                message = $"Retrieved {invitations.Count} pending invitation(s)"
             });
         }
         catch (Exception ex)

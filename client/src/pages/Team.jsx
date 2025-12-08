@@ -39,7 +39,10 @@ const Team = () => {
     const totalTasks = projects?.reduce((acc, p) => acc + (p.taskCount || 0), 0);
 
     // Show skeleton while loading
-    if (isLoadingMembers || isLoadingInvitations) {
+    if (
+        // isLoadingMembers 
+        // || 
+        isLoadingInvitations) {
         return <TeamSkeleton />;
     }
 

@@ -12,11 +12,11 @@ export default function StatsGrid() {
         (state) => state?.currentWorkspace || null
     );
 
-    const {data: projectes, isLoading: isProjectsLoading} = useProjects(currentWorkspace)
+    const {data: projects, isLoading: isProjectsLoading} = useProjects(currentWorkspace)
 
     const {user} = useAuthStore(state => state)
 
-    const {projects} = useProjectStore(state => state)
+    // const {projects} = useProjectStore(state => state)
 
     const {tasks } = useTaskStore(state => state)
 
@@ -74,7 +74,7 @@ export default function StatsGrid() {
     useEffect(() => {
         if (currentWorkspace) {
             setStats({
-                totalProjects: projects.length,
+                totalProjects: projects?.length,
                 activeProjects: projects?.filter(
                     (p) => p.status !== "CANCELLED" && p.status !== "COMPLETED"
                 ).length,
@@ -89,7 +89,7 @@ export default function StatsGrid() {
                 ) : 0,
             });
         }
-    }, [currentWorkspace]);
+    }, [currentWorkspace, projects]);
 
     if (isProjectsLoading) {
         return (
@@ -98,6 +98,7 @@ export default function StatsGrid() {
              </div>
             )
     }
+
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 my-9">

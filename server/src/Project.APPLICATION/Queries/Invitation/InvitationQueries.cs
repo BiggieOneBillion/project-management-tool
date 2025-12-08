@@ -8,3 +8,7 @@ public record GetWorkspaceInvitationsQuery(
     string WorkspaceId, 
     InvitationStatus? Status = InvitationStatus.PENDING
 ) : IRequest<List<InvitationDto>>;
+
+public record GetUserPendingInvitationsQuery(
+    string Email
+) : IRequest<List<InvitationDto>>;

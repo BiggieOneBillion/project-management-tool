@@ -6,6 +6,7 @@ import CreateProjectDialog from "./CreateProjectDialog";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
 import { useProjectStore } from "../stores/useProjectStore";
 import { useProjects } from "../hooks/queries/useProjectQueries";
+import ProjectsSkeleton from "./skeletons/ProjectsSkeleton";
 
 const ProjectOverview = () => {
     const statusColors = {
@@ -24,20 +25,15 @@ const ProjectOverview = () => {
 
     const {currentWorkspace} = useWorkspaceStore((state) => state);
 
-    const {fetchProjects, projects:WorkspaceProjects} = useProjectStore((state) => state);
 
-    const {data: projects = [], isLoading: isProjectsLoading} = useProjects(currentWorkspace)
+    const {data: WorkspaceProjects = [], isLoading: isProjectsLoading} = useProjects(currentWorkspace)
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    // const [projects, setProjects] = useState([]);
 
-    // useEffect(() => {
-    //     setProjects(WorkspaceProjects || []);
-    // }, [WorkspaceProjects]);
-
-    // useEffect(() => {
-    //     fetchProjects(currentWorkspace?.id, true); // Include tasks for stats
-    // }, [currentWorkspace]);
+    if(isProjectsLoading) {
+        return <ProjectsSkeleton />
+    }
+   
 
     return currentWorkspace && (
         <div className="bg-white dark:bg-zinc-950 dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200 rounded-lg overflow-hidden">

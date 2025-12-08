@@ -14,4 +14,9 @@ public class InvitationDto
     public InvitationStatus Status { get; init; }
     public DateTime ExpiresAt { get; init; }
     public DateTime CreatedAt { get; init; }
+    
+    // Additional properties for better UX
+    public string? WorkspaceName { get; init; }
+    public string? ProjectName { get; init; }
+    public string? InvitedBy { get; init; }
 }

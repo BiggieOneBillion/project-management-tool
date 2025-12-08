@@ -18,7 +18,7 @@ import { useWorkspaceStore } from "../stores/useWorkspaceStore";
 import { useProjectStore } from "../stores/useProjectStore";
 import { useTaskStore } from "../stores/useTaskStore";
 import { useAuthStore } from "../stores/useAuthStore";
-import { useWorkspaces } from "../hooks";
+import { usePendingInvitations, useWorkspaces } from "../hooks";
 import InvitationBanner from "../components/InvitationBanner";
 
 const Dashboard = () => {
@@ -26,8 +26,10 @@ const Dashboard = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-   const navigate = useNavigate();
+  const navigate = useNavigate();
 
+  const { data: invitations , isLoading:isLoadingWell } = usePendingInvitations(user?.email);
+   
   const { currentWorkspace } = useWorkspaceStore();
   const {projects} = useProjectStore(state => state)
   const {tasks} = useTaskStore(state => state)
@@ -52,6 +54,8 @@ const Dashboard = () => {
   if (isLoading) {
     return <DashboardSkeleton />;
   }
+
+    console.log("invitations", invitations, isLoadingWell, user?.email);
 
   // No need to check for workspaces here - WorkspaceProtectedRoute handles this
 

@@ -39,3 +39,32 @@ public class GetWorkspaceInvitationsQueryHandler
         return _mapper.Map<List<InvitationDto>>(orderedInvitations);
     }
 }
+
+public class GetUserPendingInvitationsQueryHandler 
+    : IRequestHandler<GetUserPendingInvitationsQuery, List<InvitationDto>>
+{
+    private readonly IInvitationRepository _repository;
+    private readonly IMapper _mapper;
+    
+    public GetUserPendingInvitationsQueryHandler(IInvitationRepository repository, IMapper mapper)
+    {
+        _repository = repository;
+        _mapper = mapper;
+    }
+    
+    public async Task<List<InvitationDto>> Handle(
+        GetUserPendingInvitationsQuery request, 
+        CancellationToken cancellationToken)
+    {
+        // Get all invitations for the user's email
+        var invitations = await _repository.GetUserInvitationsAsync(request.Email);
+        
+        // Filter to only pending invitations
+        var pendingInvitations = invitations
+            .Where(i => i.Status == InvitationStatus.PENDING)
+            .OrderByDescending(i => i.CreatedAt)
+            .ToList();
+        
+        return _mapper.Map<List<InvitationDto>>(pendingInvitations);
+    }
+}
