@@ -11,11 +11,16 @@ public class GetWorkspaceInvitationsQueryHandler
     : IRequestHandler<GetWorkspaceInvitationsQuery, List<InvitationDto>>
 {
     private readonly IInvitationRepository _repository;
+    private readonly IWorkspaceRepository _workspaceRepository;
     private readonly IMapper _mapper;
     
-    public GetWorkspaceInvitationsQueryHandler(IInvitationRepository repository, IMapper mapper)
+    public GetWorkspaceInvitationsQueryHandler(
+        IInvitationRepository repository,
+        IWorkspaceRepository workspaceRepository,
+        IMapper mapper)
     {
         _repository = repository;
+        _workspaceRepository = workspaceRepository;
         _mapper = mapper;
     }
     
@@ -23,6 +28,22 @@ public class GetWorkspaceInvitationsQueryHandler
         GetWorkspaceInvitationsQuery request, 
         CancellationToken cancellationToken)
     {
+        // Authorization: Only workspace owner or admin can view pending invitations
+        var workspace = await _workspaceRepository.GetWithMembersAsync(request.WorkspaceId);
+        if (workspace == null)
+        {
+            throw new InvalidOperationException("Workspace not found");
+        }
+
+        var isOwner = workspace.OwnerId == request.UserId;
+        var member = workspace.Members.FirstOrDefault(m => m.UserId == request.UserId);
+        var isAdmin = member?.Role == CORE.ValueObjects.WorkspaceRole.ADMIN;
+
+        if (!isOwner && !isAdmin)
+        {
+            throw new UnauthorizedAccessException("Only workspace owners or admins can view pending invitations");
+        }
+
         // Get all invitations for the workspace using repository method
         var invitations = await _repository.GetWorkspaceInvitationsAsync(request.WorkspaceId);
         
