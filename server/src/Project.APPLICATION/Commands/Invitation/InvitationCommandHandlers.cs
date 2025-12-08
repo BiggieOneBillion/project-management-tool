@@ -252,10 +252,14 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
 public class RevokeInvitationCommandHandler : IRequestHandler<RevokeInvitationCommand, Unit>
 {
     private readonly IInvitationRepository _invitationRepository;
+    private readonly IWorkspaceRepository _workspaceRepository;
 
-    public RevokeInvitationCommandHandler(IInvitationRepository invitationRepository)
+    public RevokeInvitationCommandHandler(
+        IInvitationRepository invitationRepository,
+        IWorkspaceRepository workspaceRepository)
     {
         _invitationRepository = invitationRepository;
+        _workspaceRepository = workspaceRepository;
     }
 
     public async Task<Unit> Handle(RevokeInvitationCommand request, CancellationToken cancellationToken)
