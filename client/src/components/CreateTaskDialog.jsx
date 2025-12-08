@@ -37,8 +37,6 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
             UserId: user.id
         };
 
-        // console.log("NEW TASK", taskData)
-
         createTask(taskData, {
             onSuccess: () => {
                 // Reset form

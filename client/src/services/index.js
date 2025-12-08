@@ -13,7 +13,6 @@ export const workspaceService = {
   },
 
   create: async (data) => {
-    console.log("WORKSPACE DATA----")
     return await api.post('/workspaces', data);
   },
 
@@ -166,14 +165,12 @@ export const authService = {
 
 export const invitationService = {
   inviteToWorkspace: async (params) => {
-    console.log("INVITE WORK PEOPLE", params)
     const payload = {
       WorkspaceId: params.workspaceId,
       Email: params.email,
       Role: params.role,
     }
 
-    console.log("axios PAYLOAD", payload)
     return await api.post('/invitations/workspace', payload);
   },
 

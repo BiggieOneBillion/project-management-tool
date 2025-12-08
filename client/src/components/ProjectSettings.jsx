@@ -17,14 +17,6 @@ export default function ProjectSettings({ project }) {
 //     "endDate": "2025-12-31T01:00:00+01:00",
 //     "teamLeadId": null,
 //     "workspaceId": "73d3c99a-ebe5-4d44-90be-fa6a3f0f3275",
-//     "progress": 0,
-//     "taskCount": 0,
-//     "memberCount": 0,
-//     "teamLead": null,
-//     "createdAt": "2025-12-05T09:44:50.59892+01:00",
-//     "updatedAt": "2025-12-05T09:44:50.598941+01:00"
-// }
-
     const [formData, setFormData] = useState({
         name: "New Website Launch",
         description: "Initial launch for new web platform.",

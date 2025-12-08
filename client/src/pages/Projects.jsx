@@ -20,9 +20,6 @@ export default function Projects() {
 
   const {projects:workspaceProjects} = useProjectStore(state => state)
 
-  
-
-  console.log("CURRENT WORK SPACE", workspaceProjects);
 
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");

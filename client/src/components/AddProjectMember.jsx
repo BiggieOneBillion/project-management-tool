@@ -25,8 +25,7 @@ const AddProjectMember = ({ isDialogOpen, setIsDialogOpen }) => {
             const response = await projectService.getProjectMembers(project.id); 
             setMembers(response.data);
         } catch (error) {
-            console.log(error)
-            toast.error("Failed to fetch project members");
+            toast.error(error?.response?.data?.message || error.message);
             setMembers([])
         } 
     }

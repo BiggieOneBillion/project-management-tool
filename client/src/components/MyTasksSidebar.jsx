@@ -41,10 +41,6 @@ function MyTasksSidebar() {
 
     // console.log(tasks, currentProject)
 
-    // if (tasks.length === 0) {
-    //     return <div>No tasks found</div>
-    // }
-
     return (
         <div className="mt-6 px-3">
             <div onClick={toggleMyTasks} className="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-zinc-800" >

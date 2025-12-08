@@ -7,18 +7,14 @@ import toast from 'react-hot-toast';
  * Create workspace mutation with optimistic update
  */
 export function useCreateWorkspace() {
-  console.log("WORKSPACE MUTATION")
   const queryClient = useQueryClient();
   const addWorkspace = useWorkspaceStore(state => state.addWorkspace);
-  console.log("WORKSPACE MUTATION 1")
   
   return useMutation({
     mutationFn: async (data) => {
-    console.log("WORKSPACE DATA----")
     return await api.post('/workspaces', data);
   },
     onMutate: async (newWorkspace) => {
-      console.log("WORKSPACE MUTATION 2", newWorkspace)
       // Create temporary ID for optimistic update
       const tempId = `temp-${Date.now()}`;
       const optimisticWorkspace = { 
@@ -33,7 +29,6 @@ export function useCreateWorkspace() {
       return { tempId };
     },
     onSuccess: (response, variables, context) => {
-      console.log("WORKSPACE MUTATION 3")
       // Replace temp workspace with real one from server
       const updateWorkspace = useWorkspaceStore.getState().updateWorkspace;
       updateWorkspace(context.tempId, response.data);

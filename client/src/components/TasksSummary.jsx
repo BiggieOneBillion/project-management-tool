@@ -43,8 +43,6 @@ export default function TasksSummary() {
         return <div>Loading...</div>;
     }
 
-    console.log("MAIN TASK", tasks)
-
     return (
         <div className="space-y-6">
             {summaryCards.map((card) => (

@@ -33,11 +33,7 @@ const Team = () => {
         revokeInvitation(invitationId);
     };
 
-    console.log("CURRENT WORKSPACE", currentWorkspace)
-
     // Removed manual fetching and effects
-
-    // console.log("Current Workspace Members:", currentWorkspace);
 
     return (
         <div className="space-y-6 max-w-6xl mx-auto">
