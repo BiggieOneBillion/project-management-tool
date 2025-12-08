@@ -3,6 +3,7 @@ import { UsersIcon, Search, UserPlus, Shield, Activity, Clock, X } from "lucide-
 import InviteMemberDialog from "../components/InviteMemberDialog";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
 import { useWorkspaceMembers, useWorkspaceInvitations, useRevokeInvitation, useProjects } from "../hooks";
+import TeamSkeleton from "../components/skeletons/TeamSkeleton";
 
 const Team = () => {
 
@@ -34,6 +35,13 @@ const Team = () => {
     };
 
     // Removed manual fetching and effects
+
+    const totalTasks = projects?.reduce((acc, p) => acc + (p.taskCount || 0), 0);
+
+    // Show skeleton while loading
+    if (isLoadingMembers || isLoadingInvitations) {
+        return <TeamSkeleton />;
+    }
 
     return (
         <div className="space-y-6 max-w-6xl mx-auto">

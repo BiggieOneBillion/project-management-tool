@@ -2,14 +2,15 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useCreateWorkspace } from '../hooks';
+import { validateWorkspaceName, validateDescription } from '../utils/validation';
 import toast from 'react-hot-toast';
 
 export default function CreateWorkspaceModal({ isOpen, onClose }) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    imageUrl: '',
   });
+  const [errors, setErrors] = useState({});
   
   const { mutate: createWorkspace, isPending } = useCreateWorkspace();
   const { user } = useAuthStore();
@@ -19,15 +20,32 @@ export default function CreateWorkspaceModal({ isOpen, onClose }) {
       ...formData,
       [e.target.name]: e.target.value,
     });
+    // Clear error for the field being changed
+    if (errors[e.target.name]) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        [e.target.name]: undefined,
+      }));
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    if (!formData.name.trim()) {
-      toast.error('Workspace name is required');
+
+    // Validate form
+    const newErrors = {};
+    const nameError = validateWorkspaceName(formData.name);
+    const descError = validateDescription(formData.description, 500);
+
+    if (nameError) newErrors.name = nameError;
+    if (descError) newErrors.description = descError;
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
+
+    setErrors({}); // Clear any previous errors
 
     // Generate slug from name
     const slug = formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -77,10 +95,13 @@ export default function CreateWorkspaceModal({ isOpen, onClose }) {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="e.g., My Company"
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              placeholder="My Awesome Workspace"
+              className={`w-full px-4 py-2 border ${errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white`}
               required
             />
+            {errors.name && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name}</p>
+            )}
           </div>
 
           {/* Description */}
@@ -93,10 +114,16 @@ export default function CreateWorkspaceModal({ isOpen, onClose }) {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="What's this workspace for?"
+              placeholder="A brief description of your workspace..."
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+              className={`w-full px-4 py-2 border ${errors.description ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none`}
             />
+            {errors.description && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.description}</p>
+            )}
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {formData.description.length}/500 characters
+            </p>
           </div>
 
           {/* Image URL */}

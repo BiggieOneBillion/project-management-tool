@@ -28,10 +28,17 @@ const Dashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
    const navigate = useNavigate();
 
-  const {loading:workspacesLoading, error, data:workspacess} = useWorkspaces(user?.id);
-  const {loading:projectsLoading} = useProjectStore((state) => state);
-  const {loading:tasksLoading} = useTaskStore((state) => state);
-  const {workspaces} = useWorkspaceStore((state) => state)
+  const { currentWorkspace } = useWorkspaceStore();
+  const {projects} = useProjectStore(state => state)
+  const {tasks} = useTaskStore(state => state)
+
+  const { data: workspaces = [], isLoading: workspacesLoading, error } = useWorkspaces();
+
+  if (error) {
+    toast.error(error?.message || "Failed to load workspaces");
+  }
+
+  const isLoading = workspacesLoading;
 
   // Check for create=workspace query parameter
   useEffect(() => {
@@ -42,23 +49,8 @@ const Dashboard = () => {
     }
   }, [searchParams, setSearchParams]);
 
-  if (error) {
-    toast.error(error?.message || "Failed to load workspaces");
-  }
-
-  const isLoading = workspacesLoading;
-
   if (isLoading) {
-    return (
-      <div className="max-w-6xl mx-auto flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-500 dark:text-zinc-400">
-            Loading dashboard...
-          </p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   // No need to check for workspaces here - WorkspaceProtectedRoute handles this

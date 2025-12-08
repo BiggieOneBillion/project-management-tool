@@ -5,6 +5,7 @@ import CreateProjectDialog from "../components/CreateProjectDialog";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
 import { useProjectStore } from "../stores/useProjectStore";
 import { useProjects } from "../hooks/queries/useProjectQueries";
+import ProjectsSkeleton from "../components/skeletons/ProjectsSkeleton";
 
 export default function Projects() {
 //   const projects = useWorkspaceStore(
@@ -60,7 +61,7 @@ export default function Projects() {
   }, [ searchTerm, filters]);
 
   if (loadingProject) {
-    return <p>Loading....</p>
+    return <ProjectsSkeleton />;
   }
 
   return (
