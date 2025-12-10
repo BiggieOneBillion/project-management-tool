@@ -20,6 +20,7 @@ public class TaskEntity
     public ProjectEntity Project { get; set; } = null!;
     public User? Assignee { get; set; }
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
+    public ICollection<Note> Notes { get; set; } = new List<Note>();
 }
 
 public class Comment

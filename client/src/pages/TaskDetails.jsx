@@ -1,18 +1,22 @@
 import { format } from "date-fns";
+import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeftIcon, CalendarIcon, PenIcon } from "lucide-react";
-import { useTask, useProject, useTaskComments } from "../hooks";
+import { ArrowLeftIcon, CalendarIcon, PenIcon, MessageCircle, StickyNote } from "lucide-react";
+import { useTask, useProject, useTaskComments, useTaskNotes } from "../hooks";
 import { useAuthStore } from "../stores/useAuthStore";
 import CommentThread from "../components/CommentThread";
+import NotesList from "../components/NotesList";
 
 const TaskDetails = () => {
   const [searchParams] = useSearchParams();
   const projectId = searchParams.get("projectId");
   const taskId = searchParams.get("taskId");
+  const [activeTab, setActiveTab] = useState('comments');
 
   const { data: currentTask, isLoading: loadingTask } = useTask(taskId);
   const { data: project, isLoading: loadingProject } = useProject(projectId);
   const { data: comments = [], isLoading: loadingComments } = useTaskComments(taskId);
+  const { data: notes = [], isLoading: loadingNotes } = useTaskNotes(taskId);
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
@@ -37,14 +41,50 @@ const TaskDetails = () => {
         <ArrowLeftIcon className="w-4 h-4" />
       </button>
       </div>
-      {/* Left: Comments / Chatbox */}
+      {/* Left: Comments / Notes */}
       <div className="w-full lg:w-2/3">
-        <CommentThread
-          taskId={taskId}
-          comments={comments}
-          currentUserId={user?.id}
-          isLoading={loadingComments}
-        />
+        {/* Tab Navigation */}
+        <div className="flex gap-2 mb-4 border-b border-gray-300 dark:border-zinc-800">
+          <button
+            onClick={() => setActiveTab('comments')}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'comments'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200'
+            }`}
+          >
+            <MessageCircle className="size-4" />
+            Comments ({comments.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('notes')}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'notes'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200'
+            }`}
+          >
+            <StickyNote className="size-4" />
+            Notes ({notes.length})
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'comments' ? (
+          <CommentThread
+            taskId={taskId}
+            comments={comments}
+            currentUserId={user?.id}
+            isLoading={loadingComments}
+          />
+        ) : (
+          <NotesList
+            taskId={taskId}
+            notes={notes}
+            currentUserId={user?.id}
+            isLoading={loadingNotes}
+          />
+        )}
       </div>
 
       {/* Right: Task + Project Info */}

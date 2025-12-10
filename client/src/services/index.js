@@ -1,5 +1,7 @@
 import api from './api';
 
+export * from './noteService';
+
 export const workspaceService = { 
   getAll: async (userId) => {
     const params = userId ? { userId } : {};

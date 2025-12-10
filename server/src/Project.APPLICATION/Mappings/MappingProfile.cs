@@ -4,6 +4,8 @@ using Project.APPLICATION.DTOs.Project;
 using Project.APPLICATION.DTOs.Task;
 using Project.APPLICATION.DTOs.User;
 using Project.APPLICATION.DTOs.Comment;
+using Project.APPLICATION.DTOs.Note;
+using Project.APPLICATION.DTOs.Notification;
 using Project.CORE.Entities;
 
 namespace Project.APPLICATION.Mappings;
@@ -52,6 +54,14 @@ public class MappingProfile : Profile
         
         // Comment mappings
         CreateMap<Comment, CommentDto>();
+        
+        // Note mappings
+        CreateMap<CORE.Entities.Note, NoteDto>();
+        CreateMap<NoteMention, NoteMentionDto>();
+        CreateMap<NoteAttachment, NoteAttachmentDto>();
+        
+        // Notification mappings
+        CreateMap<CORE.Entities.Notification, NotificationDto>();
         
         // Invitation mappings
         CreateMap<Invitation, DTOs.Invitation.InvitationDto>()
