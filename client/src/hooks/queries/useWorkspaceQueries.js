@@ -46,7 +46,7 @@ export function useWorkspaceMembers(workspaceId) {
   return useQuery({
     queryKey: ['workspace', workspaceId, 'members'],
     queryFn: async () => {
-      const response = await workspaceService.getMembers(workspaceId);
+      const response = await workspaceService.getById(workspaceId, true, false);
       return response.data;
     },
     enabled: !!workspaceId,

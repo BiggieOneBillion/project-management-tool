@@ -149,6 +149,29 @@ public class ProjectRepository : Repository<ProjectEntity>, IProjectRepository
                 .ThenInclude(m => m.User)
             .FirstOrDefaultAsync(p => p.Id == id);
     }
+    
+    public async Task<IEnumerable<ProjectMember>> GetProjectMembersAsync(string projectId)
+    {
+        return await _context.ProjectMembers
+            .Where(pm => pm.ProjectId == projectId)
+            .Include(pm => pm.User)
+            .ToListAsync();
+    }
+    
+    public async Task<IEnumerable<WorkspaceMember>> GetAvailableWorkspaceMembersAsync(string projectId, string workspaceId)
+    {
+        // Get all project member user IDs
+        var projectMemberUserIds = await _context.ProjectMembers
+            .Where(pm => pm.ProjectId == projectId)
+            .Select(pm => pm.UserId)
+            .ToListAsync();
+        
+        // Get workspace members who are NOT in the project
+        return await _context.WorkspaceMembers
+            .Where(wm => wm.WorkspaceId == workspaceId && !projectMemberUserIds.Contains(wm.UserId))
+            .Include(wm => wm.User)
+            .ToListAsync();
+    }
 }
 
 public class TaskRepository : Repository<TaskEntity>, ITaskRepository

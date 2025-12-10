@@ -18,24 +18,24 @@ const Team = () => {
     const { user } = useAuthStore();
     const workspaceId = currentWorkspace?.id;
     
-    const { data: users = [] } = useWorkspaceMembers(workspaceId);
+    const { data: users , isLoading:isLoadingMembers } = useWorkspaceMembers(workspaceId);
     const { data: pendingInvitations = [], isLoading: isLoadingInvitations } = useWorkspaceInvitations(workspaceId);
     const { data: projects = [] } = useProjects(workspaceId);
     const { mutate: revokeInvitation } = useRevokeInvitation();
 
     // Check if current user is owner or admin
     const isOwner = currentWorkspace?.ownerId === user?.id;
-    const currentMember = users.find(m => m.userId === user?.id);
+    const currentMember = users?.members.find(m => m.userId === user?.id);
     const isAdmin = currentMember?.role === 'ADMIN' || currentMember?.role === 2; // 2 is ADMIN enum value
     const canManageInvitations = isOwner || isAdmin;
 
     // Derived state
     const tasksCount = projects?.reduce((acc, p) => acc + (p.taskCount || 0), 0);
 
-    const filteredUsers = users.filter(
+    const filteredUsers = users?.members.filter(
         (user) =>
-            user?.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user?.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+            user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const handleRevokeInvitation = (invitationId) => {
@@ -48,11 +48,13 @@ const Team = () => {
 
     // Show skeleton while loading
     if (
-        // isLoadingMembers 
-        // || 
+        isLoadingMembers
+        || 
         isLoadingInvitations) {
         return <TeamSkeleton />;
     }
+
+    console.log("USERS----", users)
 
     return (
         <div className="space-y-6 max-w-6xl mx-auto">
@@ -79,7 +81,7 @@ const Team = () => {
                     <div className="flex items-center justify-between gap-8 md:gap-22">
                         <div>
                             <p className="text-sm text-gray-500 dark:text-zinc-400">Total Members</p>
-                            <p className="text-xl font-bold text-gray-900 dark:text-white">{users.length}</p>
+                            <p className="text-xl font-bold text-gray-900 dark:text-white">{users.members.length}</p>
                         </div>
                         <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-500/10">
                             <UsersIcon className="size-4 text-blue-500 dark:text-blue-200" />
@@ -93,7 +95,7 @@ const Team = () => {
                         <div>
                             <p className="text-sm text-gray-500 dark:text-zinc-400">Active Projects</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">
-                                {projects?.filter((p) => p.status !== "CANCELLED" && p.status !== "COMPLETED").length}
+                                {users?.projects?.filter((p) => p.status !== "CANCELLED" && p.status !== "COMPLETED").length}
                             </p>
                         </div>
                         <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/10">

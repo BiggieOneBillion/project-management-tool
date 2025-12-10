@@ -37,7 +37,7 @@ export function useProject(projectId, options = {}) {
     queryKey: ['project', projectId, options],
     queryFn: async () => {
       const response = await projectService.getById(projectId, options);
-      setCurrentProject(response.data);
+      // setCurrentProject(response.data);
       return response.data;
     },
     enabled: !!projectId,

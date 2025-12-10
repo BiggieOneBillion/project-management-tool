@@ -1,6 +1,7 @@
 using AutoMapper;
 using MediatR;
 using Project.APPLICATION.DTOs.Project;
+using Project.APPLICATION.DTOs.Workspace;
 using Project.CORE.Interfaces;
 
 namespace Project.APPLICATION.Queries.Project;
@@ -83,5 +84,41 @@ public class GetWorkspaceProjectsQueryHandler : IRequestHandler<GetWorkspaceProj
         }
         
         return _mapper.Map<List<ProjectDto>>(projects);
+    }
+}
+
+public class GetProjectMembersQueryHandler : IRequestHandler<GetProjectMembersQuery, List<ProjectMemberDto>>
+{
+    private readonly IProjectRepository _repository;
+    private readonly IMapper _mapper;
+    
+    public GetProjectMembersQueryHandler(IProjectRepository repository, IMapper mapper)
+    {
+        _repository = repository;
+        _mapper = mapper;
+    }
+    
+    public async Task<List<ProjectMemberDto>> Handle(GetProjectMembersQuery request, CancellationToken cancellationToken)
+    {
+        var members = await _repository.GetProjectMembersAsync(request.ProjectId);
+        return _mapper.Map<List<ProjectMemberDto>>(members);
+    }
+}
+
+public class GetAvailableWorkspaceMembersQueryHandler : IRequestHandler<GetAvailableWorkspaceMembersQuery, List<WorkspaceMemberDto>>
+{
+    private readonly IProjectRepository _repository;
+    private readonly IMapper _mapper;
+    
+    public GetAvailableWorkspaceMembersQueryHandler(IProjectRepository repository, IMapper mapper)
+    {
+        _repository = repository;
+        _mapper = mapper;
+    }
+    
+    public async Task<List<WorkspaceMemberDto>> Handle(GetAvailableWorkspaceMembersQuery request, CancellationToken cancellationToken)
+    {
+        var availableMembers = await _repository.GetAvailableWorkspaceMembersAsync(request.ProjectId, request.WorkspaceId);
+        return _mapper.Map<List<WorkspaceMemberDto>>(availableMembers);
     }
 }

@@ -43,6 +43,18 @@ export const projectService = {
     return response;
   },
 
+  getProjectMembersList: async (projectId) => {
+    const response = await api.get(`/projects/${projectId}/members/list`);
+    return response;
+  },
+
+  getAvailableWorkspaceMembers: async (projectId, workspaceId) => {
+    const response = await api.get(`/projects/${projectId}/available-members`, {
+      params: { workspaceId }
+    });
+    return response;
+  },
+
   create: async (data) => {
     return await api.post('/projects', data);
   },
@@ -53,6 +65,10 @@ export const projectService = {
 
   delete: async (id) => {
     return await api.delete(`/projects/${id}`);
+  },
+
+  addMemberToProject: async (projectId, email) => {
+    return await api.post(`/projects/${projectId}/members`, { email });
   },
 };
 
