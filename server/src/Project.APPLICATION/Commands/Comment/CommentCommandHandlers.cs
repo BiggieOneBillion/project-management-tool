@@ -20,12 +20,30 @@ public class CreateCommentCommandHandler : IRequestHandler<CreateCommentCommand,
     
     public async Task<CommentDto> Handle(CreateCommentCommand request, CancellationToken cancellationToken)
     {
+        int level = 0;
+        
+        // If this is a reply, validate parent and calculate level
+        if (!string.IsNullOrEmpty(request.ParentId))
+        {
+            var parent = await _repository.GetByIdAsync(request.ParentId);
+            if (parent == null)
+                throw new EntityNotFoundException("Parent Comment", request.ParentId);
+            
+            level = parent.Level + 1;
+            
+            // Enforce max nesting level of 4
+            if (level > 4)
+                throw new BusinessRuleViolationException("Maximum comment nesting level (4) exceeded");
+        }
+        
         var comment = new CORE.Entities.Comment
         {
             Id = Guid.NewGuid().ToString(),
             TaskId = request.TaskId,
             UserId = request.UserId,
             Content = request.Content,
+            ParentId = request.ParentId,
+            Level = level,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -53,6 +71,9 @@ public class UpdateCommentCommandHandler : IRequestHandler<UpdateCommentCommand,
         if (comment == null)
             throw new EntityNotFoundException("Comment", request.Id);
         
+        // Note: Ownership validation should be done in the controller/API layer
+        // where we have access to the current user context
+        
         comment.Content = request.Content;
         comment.UpdatedAt = DateTime.UtcNow;
         
@@ -72,6 +93,14 @@ public class DeleteCommentCommandHandler : IRequestHandler<DeleteCommentCommand,
     
     public async Task<Unit> Handle(DeleteCommentCommand request, CancellationToken cancellationToken)
     {
+        var comment = await _repository.GetByIdAsync(request.Id);
+        
+        if (comment == null)
+            throw new EntityNotFoundException("Comment", request.Id);
+        
+        // Note: Ownership validation should be done in the controller/API layer
+        // Cascade delete will automatically remove all replies due to DB configuration
+        
         await _repository.DeleteAsync(request.Id);
         return Unit.Value;
     }

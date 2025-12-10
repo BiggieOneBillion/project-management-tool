@@ -28,10 +28,14 @@ public class Comment
     public string TaskId { get; set; } = string.Empty;
     public string UserId { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
+    public string? ParentId { get; set; }
+    public int Level { get; set; } = 0;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     
     // Navigation Properties
     public TaskEntity Task { get; set; } = null!;
     public User User { get; set; } = null!;
+    public Comment? Parent { get; set; }
+    public ICollection<Comment> Replies { get; set; } = new List<Comment>();
 }

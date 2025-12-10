@@ -81,15 +81,30 @@ public class CommentConfiguration : IEntityTypeConfiguration<Comment>
             .HasMaxLength(5000)
             .IsRequired();
         
+        builder.Property(c => c.ParentId)
+            .HasMaxLength(50)
+            .IsRequired(false);
+        
+        builder.Property(c => c.Level)
+            .HasDefaultValue(0)
+            .IsRequired();
+        
         builder.Property(c => c.CreatedAt)
             .HasDefaultValueSql("NOW()");
         
         builder.Property(c => c.UpdatedAt)
             .HasDefaultValueSql("NOW()");
         
+        // Self-referencing relationship for nested comments
+        builder.HasOne(c => c.Parent)
+            .WithMany(c => c.Replies)
+            .HasForeignKey(c => c.ParentId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
         // Indexes
         builder.HasIndex(c => c.TaskId);
         builder.HasIndex(c => c.UserId);
+        builder.HasIndex(c => c.ParentId);
         builder.HasIndex(c => c.CreatedAt);
     }
 }
