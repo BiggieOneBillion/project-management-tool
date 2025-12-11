@@ -57,3 +57,17 @@ export function useProjectMembers(projectId) {
     enabled: !!projectId,
   });
 }
+
+/**
+ * Fetch avaliable workspace members not in project
+ */
+export function useWorkspaceMembersNotInProject(projectId, workspaceId) {
+  return useQuery({
+    queryKey: ['workspace', workspaceId, 'members', projectId],
+    queryFn: async () => {
+      const response = await projectService.getAvailableWorkspaceMembers(projectId, workspaceId);
+      return response.data;
+    },
+    enabled: !!workspaceId && !!projectId,
+  });
+}

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Mail, UserPlus } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
-import { useProjectStore } from "../stores/useProjectStore";
+import { useWorkspaceMembersNotInProject } from "../hooks/queries/useProjectQueries";
 import { projectService, workspaceService } from "../services";
 import toast from "react-hot-toast";
 import { useProject } from "../hooks/queries/useProjectQueries";
@@ -22,6 +22,7 @@ const AddProjectMember = ({ isDialogOpen, setIsDialogOpen }) => {
 
   const { data: project, isLoading: loadingProjects } = useProject(id);
 
+  const { data: membersToChooseFrom = [], isLoading: loadingMembers } = useWorkspaceMembersNotInProject(id, currentWorkspace?.id);
 
   const getProjectMembers = async () => {
     try {
@@ -110,10 +111,7 @@ const AddProjectMember = ({ isDialogOpen, setIsDialogOpen }) => {
 
   if (!isDialogOpen) return null;
 
-  if (isLoading || loadingProjects) <p>Loading...</p>;
-
-//   console.log("MEMBERS", members);
-
+  if (isLoading || loadingProjects || loadingMembers) return <p>Loading...</p>;
 
   return (
     <div className="fixed inset-0 bg-black/20 dark:bg-black/50 backdrop-blur flex items-center justify-center z-50">
@@ -154,7 +152,7 @@ const AddProjectMember = ({ isDialogOpen, setIsDialogOpen }) => {
                 required
               >
                 <option value="">Select a member</option>
-                {members.map((member) => (
+                {membersToChooseFrom?.map((member) => (
                   <option key={member.user.id} value={member.user.email}>
                     {" "}
                     {member.user.email}{" "}
@@ -175,7 +173,7 @@ const AddProjectMember = ({ isDialogOpen, setIsDialogOpen }) => {
             </button>
             <button
               type="submit"
-              disabled={isAdding || !currentWorkspace}
+              disabled={isAdding || !currentWorkspace || membersToChooseFrom?.length === 0}
               className="px-5 py-2 text-sm rounded bg-gradient-to-br from-blue-500 to-blue-600 hover:opacity-90 text-white disabled:opacity-50 transition"
             >
               {isAdding ? "Adding..." : "Add Member"}

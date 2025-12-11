@@ -3,7 +3,8 @@ import { Plus, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import AddProjectMember from "./AddProjectMember";
 import toast from "react-hot-toast";
-import { useUpdateProject, useProjectMembers } from "../hooks";
+import { useUpdateProject } from "../hooks";
+import { useProjectMembers } from "../hooks/queries/useProjectQueries";
 import { useSearchParams } from "react-router-dom";
 import { workspaceService } from "../services";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
@@ -43,8 +44,8 @@ export default function ProjectSettings({ project }) {
 
   // React Query Hooks
   const { mutate: updateProject, isPending: isSubmitting } = useUpdateProject();
-  const [members, setMembers] = useState([]);
-  // const { data: members = [] } = useProjectMembers(project?.id);
+  // const [members, setMembers] = useState([]);
+  const { data: members, isLoading: isMembersLoading } = useProjectMembers(project?.id);
 
 //   const getWorkspaceMembers = async () => {
 //     try {
@@ -124,6 +125,12 @@ export default function ProjectSettings({ project }) {
     "rounded-lg border p-6 not-dark:bg-white dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border-zinc-300 dark:border-zinc-800";
 
   const labelClasses = "text-sm text-zinc-600 dark:text-zinc-400";
+
+  if (isMembersLoading) {
+    return <div>Loading...</div>;
+  }
+
+  // console.log("MEMBERS", memberss)
 
   return (
     <div className="grid lg:grid-cols-2 gap-8">
@@ -262,7 +269,7 @@ export default function ProjectSettings({ project }) {
             <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-300 mb-4">
               Team Members{" "}
               <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                ({project.memberCount})
+                ({members?.length})
               </span>
             </h2>
             <button

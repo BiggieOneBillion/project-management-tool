@@ -27,6 +27,8 @@ const CommentThread = ({ taskId, comments = [], currentUserId, isLoading }) => {
     });
   };
 
+  console.log("COMMENTS---", comments)
+
   return (
     <div className="p-5 rounded-md border border-gray-300 dark:border-zinc-800 flex flex-col lg:h-[80vh]">
       <h2 className="text-base font-semibold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">

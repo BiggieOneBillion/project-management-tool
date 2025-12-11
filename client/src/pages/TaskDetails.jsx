@@ -31,6 +31,9 @@ const TaskDetails = () => {
   if (!currentTask)
     return <div className="text-red-500 px-4 py-6">Task not found.</div>;
 
+
+  console.log("NOTES----", notes)
+
   return (
     <div className="flex flex-col-reverse lg:flex-row gap-6 sm:p-4 text-gray-900 dark:text-zinc-100 max-w-6xl mx-auto">
       <div>
@@ -65,7 +68,7 @@ const TaskDetails = () => {
             }`}
           >
             <StickyNote className="size-4" />
-            Notes ({notes.length})
+            Notes ({notes?.data.length})
           </button>
         </div>
 
@@ -80,7 +83,7 @@ const TaskDetails = () => {
         ) : (
           <NotesList
             taskId={taskId}
-            notes={notes}
+            notes={notes?.data}
             currentUserId={user?.id}
             isLoading={loadingNotes}
           />

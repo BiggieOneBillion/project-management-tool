@@ -1,16 +1,39 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { MoreVertical, Edit2, Trash2, FileImage } from 'lucide-react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
+import Link from '@tiptap/extension-link';
 import NoteEditor from './NoteEditor';
 import { useUpdateNote, useDeleteNote, useDeleteAttachment } from '../hooks';
 
 const NoteCard = ({ note, taskId, currentUserId }) => {
+  console.log("NOTERRR---", note)
   const [isEditing, setIsEditing] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   
   const { mutate: updateNote, isPending: isUpdating } = useUpdateNote();
   const { mutate: deleteNote, isPending: isDeleting } = useDeleteNote();
   const { mutate: deleteAttachment } = useDeleteAttachment();
+  
+  // Read-only editor for displaying content
+  const displayEditor = useEditor({
+    extensions: [
+      StarterKit,
+      Image,
+      Link.configure({
+        openOnClick: true,
+      }),
+    ],
+    content: note.content,
+    editable: false,
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm dark:prose-invert max-w-full focus:outline-none',
+      },
+    },
+  });
   
   const isOwner = note.userId === currentUserId;
   
@@ -49,13 +72,14 @@ const NoteCard = ({ note, taskId, currentUserId }) => {
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <img
-            src={note.user?.image || '/default-avatar.png'}
+         {note.user?.image ? <img
+            src={note.user?.image}
             alt={note.user?.name || 'User'}
             className="size-8 rounded-full"
-          />
+          /> : <div className="size-8 rounded-full bg-gray-300 dark:bg-zinc-700" />}
+
           <div>
-            <p className="font-medium text-gray-900 dark:text-white text-sm">
+            <p className="font-medium text-gray-900 dark:text-white text-xs">
               {note.user?.name || 'Unknown User'}
             </p>
             <p className="text-xs text-gray-500 dark:text-zinc-400">
@@ -119,10 +143,9 @@ const NoteCard = ({ note, taskId, currentUserId }) => {
           submitLabel="Update"
         />
       ) : (
-        <div 
-          className="prose prose-sm dark:prose-invert max-w-none"
-          dangerouslySetInnerHTML={{ __html: note.content }}
-        />
+        <div className="overflow-hidden break-words">
+          <EditorContent editor={displayEditor} />
+        </div>
       )}
       
       {/* Attachments */}

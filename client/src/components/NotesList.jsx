@@ -5,7 +5,9 @@ import NoteEditor from './NoteEditor';
 import { useCreateNote } from '../hooks';
 
 const NotesList = ({ taskId, notes = [], currentUserId, isLoading }) => {
+  
   const [isCreating, setIsCreating] = useState(false);
+
   const { mutate: createNote, isPending: isSubmitting } = useCreateNote();
   
   const handleCreate = (content) => {
@@ -23,6 +25,7 @@ const NotesList = ({ taskId, notes = [], currentUserId, isLoading }) => {
       }
     );
   };
+
   
   return (
     <div className="space-y-4">
