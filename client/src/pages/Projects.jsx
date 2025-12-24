@@ -1,24 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, Search, FolderOpen } from "lucide-react";
 import ProjectCard from "../components/ProjectCard";
 import CreateProjectDialog from "../components/CreateProjectDialog";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
 import { useProjectStore } from "../stores/useProjectStore";
+import { useProjects } from "../hooks/queries/useProjectQueries";
+import ProjectsSkeleton from "../components/skeletons/ProjectsSkeleton";
 
 export default function Projects() {
-//   const projects = useWorkspaceStore(
-//     (state) => state?.currentWorkspace?.projects || []
-//   );
 
   const conrrent = useWorkspaceStore((state) => state?.currentWorkspace);
 
-  const {
-    fetchProjects,
-    projects: workspaceProjects,
-    loading: loadingProject,
-  } = useProjectStore((state) => state);
-
-//   console.log("CURRENT WORK SPACE", workspaceProjects);
+  const { data: workspaceProjects, isLoading: loadingProject } =
+    useProjects(conrrent);
 
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,7 +22,7 @@ export default function Projects() {
     priority: "ALL",
   });
 
-  const filterProjects = () => {
+  const filterProjects = useCallback(() => {
     let filtered = workspaceProjects;
 
     if (searchTerm) {
@@ -52,15 +46,22 @@ export default function Projects() {
     }
 
     setFilteredProjects(filtered);
-  };
-
-  useEffect(()=>{
-    fetchProjects(conrrent?.id);
-  },[])
+  }, [workspaceProjects, searchTerm, filters, conrrent]);
 
   useEffect(() => {
     filterProjects();
-  }, [workspaceProjects, searchTerm, filters]);
+  }, [searchTerm, filters, workspaceProjects, conrrent]);
+
+  if (loadingProject) {
+    return <ProjectsSkeleton />;
+  }
+
+  // console.log(
+  //   "filteredProjects",
+  //   filteredProjects,
+  //   "workspaceProjects",
+  //   workspaceProjects
+  // );
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -125,7 +126,7 @@ export default function Projects() {
 
       {/* Projects Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProjects.length === 0 ? (
+        {filteredProjects?.length === 0 ? (
           <div className="col-span-full text-center py-16">
             <div className="w-24 h-24 mx-auto mb-6 bg-gray-200 dark:bg-zinc-800 rounded-full flex items-center justify-center">
               <FolderOpen className="w-12 h-12 text-gray-400 dark:text-zinc-500" />
@@ -145,7 +146,7 @@ export default function Projects() {
             </button>
           </div>
         ) : (
-          filteredProjects.map((project) => (
+          filteredProjects?.map((project) => (
             <ProjectCard key={project.id} project={project} />
           ))
         )}

@@ -4,18 +4,25 @@ import { useWorkspaceStore } from "../stores/useWorkspaceStore";
 import { useProjectStore } from "../stores/useProjectStore";
 import { useTaskStore } from "../stores/useTaskStore";
 import { useAuthStore } from "../stores/useAuthStore";
+import { useUserTasks, useUserTasksByWorkspaceId } from "../hooks/queries/useTaskQueries";
+import { useProjects } from "../hooks/queries/useProjectQueries";
 
 export default function StatsGrid() {
     const currentWorkspace = useWorkspaceStore(
         (state) => state?.currentWorkspace || null
     );
 
+    const {data: projects, isLoading: isProjectsLoading} = useProjects(currentWorkspace)
+
     const {user} = useAuthStore(state => state)
 
-    const {projects} = useProjectStore(state => state)
+    // const {projects} = useProjectStore(state => state)
 
-    const {tasks, fetchTasks} = useTaskStore(state => state)
+    const {tasks } = useTaskStore(state => state)
 
+    const {isLoading: isTasksLoading} = useUserTasks(user?.id)
+
+    const {isLoading: isUserTasksLoading, data:userWorkspaceTasks} = useUserTasksByWorkspaceId(currentWorkspace?.id, user?.id)
 
     const [stats, setStats] = useState({
         totalProjects: 0,
@@ -60,36 +67,38 @@ export default function StatsGrid() {
         },
     ];
 
-    useEffect(() => {
-        fetchTasks({userId: user?.id})
-    }, [user])
+    // useEffect(() => {
+    //     fetchTasks({userId: user?.id})
+    // }, [user])
 
     useEffect(() => {
         if (currentWorkspace) {
             setStats({
-                totalProjects: projects.length,
-                activeProjects: currentWorkspace.projects?.filter(
+                totalProjects: projects?.length,
+                activeProjects: projects?.filter(
                     (p) => p.status !== "CANCELLED" && p.status !== "COMPLETED"
                 ).length,
                 completedProjects: projects
                     ?.filter((p) => p.status === "COMPLETED")
                     .reduce((acc, project) => acc + project.tasks.length, 0),
-                myTasks: tasks?.reduce(
+                myTasks: userWorkspaceTasks?.length,
+                overdueIssues: userWorkspaceTasks?.length > 0 ? userWorkspaceTasks?.reduce(
                     (acc, project) =>
-                        acc +
-                        project?.tasks?.filter(
-                            (t) => t.assignee?.email === currentWorkspace.owner.email
-                        ).length,
+                        acc + project?.tasks?.filter((t) => t.dueDate < new Date()).length,
                     0
-                ),
-                overdueIssues: tasks?.reduce(
-                    (acc, project) =>
-                        acc + project?.tasks?.filter((t) => t.due_date < new Date()).length,
-                    0
-                ),
+                ) : 0,
             });
         }
-    }, [currentWorkspace]);
+    }, [currentWorkspace, projects]);
+
+    if (isProjectsLoading) {
+        return (
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 my-9">
+                 <p>Loading stats....</p>
+             </div>
+            )
+    }
+
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 my-9">

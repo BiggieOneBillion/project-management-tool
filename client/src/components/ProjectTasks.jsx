@@ -3,9 +3,7 @@ import toast from "react-hot-toast";
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bug, CalendarIcon, GitCommit, MessageSquare, Square, Trash, XIcon, Zap, Edit2, Trash2 } from "lucide-react";
-import { useWorkspaceStore } from "../stores/useWorkspaceStore";
-import { taskService } from "../services";
-import { useTaskStore } from "../stores/useTaskStore";
+import { useUpdateTaskStatus, useDeleteTask } from "../hooks";
 
 const typeIcons = {
     BUG: { icon: Bug, color: "text-red-600 dark:text-red-400" },
@@ -22,12 +20,11 @@ const priorityTexts = {
 };
 
 const ProjectTasks = ({ tasks, isWorkspaceOwner = false, onEditTask }) => {
-    const { updateTask: updateTaskInStore, deleteTask: deleteTaskInStore } = useWorkspaceStore();
-    const {updateTask: updateTaskInStores} = useTaskStore(state => state)
-    const currentWorkspace = useWorkspaceStore((state) => state?.currentWorkspace || null);
-    const fetchWorkspaceById = useWorkspaceStore((state) => state.fetchWorkspaceById);
     const navigate = useNavigate();
     const [selectedTasks, setSelectedTasks] = useState([]);
+    
+    const { mutate: updateStatus } = useUpdateTaskStatus();
+    const { mutateAsync: deleteTask } = useDeleteTask();
 
     const [filters, setFilters] = useState({
         status: "",
@@ -58,68 +55,27 @@ const ProjectTasks = ({ tasks, isWorkspaceOwner = false, onEditTask }) => {
         setFilters((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleStatusChange = async (taskId, newStatus) => {
-        try {
-            console.log(taskId, newStatus);
-            toast.loading("Updating status...");
-
-            //  Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-
-            let updatedTask = structuredClone(tasks.find((t) => t.id === taskId));
-
-            console.log("CLONED TASK",updatedTask);
-            updatedTask.status = newStatus;
-            console.log("UPDATED TASK",updatedTask);
-            // updateTaskInStore(updatedTask);
-            await updateTaskInStores(taskId, updatedTask)
-
-            toast.dismissAll();
-            toast.success("Task status updated successfully");
-        } catch (error) {
-            toast.dismissAll();
-            toast.error(error?.response?.data?.message || error.message);
-        }
+    const handleStatusChange = (taskId, newStatus) => {
+        updateStatus({ id: taskId, status: newStatus });
     };
 
     const handleDelete = async () => {
+        const confirm = window.confirm("Are you sure you want to delete the selected tasks?");
+        if (!confirm) return;
+
         try {
-            const confirm = window.confirm("Are you sure you want to delete the selected tasks?");
-            if (!confirm) return;
-
-            toast.loading("Deleting tasks...");
-
-            //  Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-
-            dispatch(deleteTaskInStore(selectedTasks));
-
-            toast.dismissAll();
+            await Promise.all(selectedTasks.map(id => deleteTask(id)));
+            setSelectedTasks([]);
             toast.success("Tasks deleted successfully");
         } catch (error) {
-            toast.dismissAll();
-            toast.error(error?.response?.data?.message || error.message);
+            // Error handled by individual mutation
         }
     };
 
     const handleDeleteTask = async (taskId) => {
-        try {
-            const confirm = window.confirm("Are you sure you want to delete this task?");
-            if (!confirm) return;
-
-            toast.loading("Deleting task...");
-            await taskService.delete(taskId);
-
-            // Refresh workspace
-            if (currentWorkspace?.id) {
-                await fetchWorkspaceById(currentWorkspace.id, true, true);
-            }
-
-            toast.dismissAll();
-            toast.success("Task deleted successfully");
-        } catch (error) {
-            toast.dismissAll();
-            toast.error(error?.response?.data?.message || error.message);
+        const confirm = window.confirm("Are you sure you want to delete this task?");
+        if (confirm) {
+            deleteTask(taskId);
         }
     };
 

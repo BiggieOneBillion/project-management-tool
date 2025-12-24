@@ -2,10 +2,15 @@ import { SearchIcon, PanelLeft } from 'lucide-react'
 import { MoonIcon, SunIcon } from 'lucide-react'
 import { assets } from '../assets/assets'
 import { useThemeStore } from '../stores/useThemeStore'
+import { useAuthStore } from '../stores/useAuthStore'
 
 const Navbar = ({ setIsSidebarOpen }) => {
 
     const { theme, toggleTheme } = useThemeStore();
+    const { user } = useAuthStore();
+
+    // Use user's avatar if available, otherwise fallback to default
+    const avatarUrl = user?.avatar || user?.profileImage || assets.profile_img_a;
 
     return (
         <div className="w-full bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 px-6 xl:px-16 py-3 flex-shrink-0">
@@ -40,8 +45,18 @@ const Navbar = ({ setIsSidebarOpen }) => {
                         }
                     </button>
 
-                    {/* User Button */}
-                    <img src={assets.profile_img_a} alt="User Avatar" className="size-7 rounded-full" />
+                    {/* User Avatar */}
+                    <div className="relative">
+                        <img 
+                            src={avatarUrl} 
+                            alt={user?.name || "User Avatar"} 
+                            className="size-7 rounded-full object-cover"
+                            onError={(e) => {
+                                // Fallback if image fails to load
+                                e.target.src = assets.profile_img_a;
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
         </div>

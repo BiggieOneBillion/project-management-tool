@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
-import MyTasksSidebar from './MyTasksSidebar'
+// import MyTasksSidebar from './MyTasksSidebar'    
 import ProjectSidebar from './ProjectsSidebar'
 import WorkspaceDropdown from './WorkspaceDropdown'
 import { FolderOpenIcon, LayoutDashboardIcon, SettingsIcon, UsersIcon, LogOutIcon } from 'lucide-react'
@@ -64,7 +64,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
                             <p className='text-sm truncate'>Logout</p>
                         </button>
                     </div>
-                    <MyTasksSidebar />
+                    {/* <MyTasksSidebar /> */}
                     <ProjectSidebar />
                 </div>
 

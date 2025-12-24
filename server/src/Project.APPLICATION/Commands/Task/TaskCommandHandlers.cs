@@ -12,16 +12,20 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, TaskD
 {
     private readonly ITaskRepository _repository;
     private readonly IProjectRepository _projectRepository;
+
+    private readonly  IWorkspaceRepository _workspaceRepository;
     private readonly IMapper _mapper;
     
     public CreateTaskCommandHandler(
         ITaskRepository repository,
         IProjectRepository projectRepository,
+        IWorkspaceRepository workspaceRepository,
         IMapper mapper)
     {
         _repository = repository;
         _projectRepository = projectRepository;
         _mapper = mapper;
+        _workspaceRepository = workspaceRepository;
     }
     
     public async Task<TaskDto> Handle(CreateTaskCommand request, CancellationToken cancellationToken)
@@ -30,8 +34,10 @@ public class CreateTaskCommandHandler : IRequestHandler<CreateTaskCommand, TaskD
         var project = await _projectRepository.GetByIdAsync(request.ProjectId);
         if (project == null)
             throw new EntityNotFoundException("Project", request.ProjectId);
-        
-        if (project.Workspace?.OwnerId != request.UserId)
+
+         var workspace = await _workspaceRepository.GetByIdAsync(project.WorkspaceId) ?? throw new EntityNotFoundException("Workspace", project.WorkspaceId);
+
+        if (workspace.OwnerId != request.UserId)
             throw new UnauthorizedAccessException("Only workspace owners can create tasks");
         
         var task = new TaskEntity
@@ -58,16 +64,20 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
 {
     private readonly ITaskRepository _repository;
     private readonly IProjectRepository _projectRepository;
+
+     private readonly  IWorkspaceRepository _workspaceRepository;
     private readonly IMapper _mapper;
     
     public UpdateTaskCommandHandler(
         ITaskRepository repository,
         IProjectRepository projectRepository,
+        IWorkspaceRepository workspaceRepository,
         IMapper mapper)
     {
         _repository = repository;
         _projectRepository = projectRepository;
         _mapper = mapper;
+        _workspaceRepository = workspaceRepository;
     }
     
     public async Task<TaskDto> Handle(UpdateTaskCommand request, CancellationToken cancellationToken)
@@ -79,11 +89,15 @@ public class UpdateTaskCommandHandler : IRequestHandler<UpdateTaskCommand, TaskD
         
         // Check if user is workspace owner
         var project = await _projectRepository.GetByIdAsync(task.ProjectId);
+
         if (project == null)
             throw new EntityNotFoundException("Project", task.ProjectId);
+
+        var workspace = await _workspaceRepository.GetByIdAsync(project.WorkspaceId) ?? throw new EntityNotFoundException("Workspace", project.WorkspaceId);
+
+        if (workspace.OwnerId != request.UserId)
+            throw new UnauthorizedAccessException("Only workspace owners can create tasks");
         
-        if (project.Workspace?.OwnerId != request.UserId)
-            throw new UnauthorizedAccessException("Only workspace owners can update tasks");
         
         task.Title = request.Title;
         task.Description = request.Description;
@@ -106,29 +120,37 @@ public class DeleteTaskCommandHandler : IRequestHandler<DeleteTaskCommand, Unit>
 {
     private readonly ITaskRepository _repository;
     private readonly IProjectRepository _projectRepository;
+
+    private readonly  IWorkspaceRepository _workspaceRepository;
     
     public DeleteTaskCommandHandler(
         ITaskRepository repository,
+        IWorkspaceRepository workspaceRepository,
         IProjectRepository projectRepository)
     {
         _repository = repository;
         _projectRepository = projectRepository;
+        _workspaceRepository = workspaceRepository;
     }
     
     public async Task<Unit> Handle(DeleteTaskCommand request, CancellationToken cancellationToken)
     {
         // Get task to find its project
         var task = await _repository.GetByIdAsync(request.Id);
+        
         if (task == null)
             throw new EntityNotFoundException("Task", request.Id);
         
         // Check if user is workspace owner
         var project = await _projectRepository.GetByIdAsync(task.ProjectId);
+
         if (project == null)
             throw new EntityNotFoundException("Project", task.ProjectId);
-        
-        if (project.Workspace?.OwnerId != request.UserId)
-            throw new UnauthorizedAccessException("Only workspace owners can delete tasks");
+
+        var workspace = await _workspaceRepository.GetByIdAsync(project.WorkspaceId) ?? throw new EntityNotFoundException("Workspace", project.WorkspaceId);
+
+        if (workspace.OwnerId != request.UserId)
+            throw new UnauthorizedAccessException("Only workspace owners can create tasks");
         
         await _repository.DeleteAsync(request.Id);
         return Unit.Value;

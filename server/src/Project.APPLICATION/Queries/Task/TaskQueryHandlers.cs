@@ -1,6 +1,7 @@
 using AutoMapper;
 using MediatR;
 using Project.APPLICATION.DTOs.Task;
+using Project.APPLICATION.Results;
 using Project.CORE.Interfaces;
 
 namespace Project.APPLICATION.Queries.Task;
@@ -88,4 +89,59 @@ public class GetUserTasksQueryHandler : IRequestHandler<GetUserTasksQuery, List<
         var tasks = await _repository.GetUserTasksAsync(request.UserId);
         return _mapper.Map<List<TaskDto>>(tasks);
     }
+}
+
+
+public class GetTasksForUserInWorkspaceQueryHandler : IRequestHandler<GetTasksForUserInWorkspaceQuery, Result<List<TaskDto>>>
+{
+    private readonly ITaskRepository _repository;
+
+    private readonly IProjectRepository _projectRepository;
+    private readonly IMapper _mapper;
+    
+    public GetTasksForUserInWorkspaceQueryHandler(ITaskRepository repository, IMapper mapper, IProjectRepository projectRepository)
+    {
+        _repository = repository;
+        _mapper = mapper;
+        _projectRepository = projectRepository;
+    }
+
+    public async Task<Result<List<TaskDto>>> Handle(GetTasksForUserInWorkspaceQuery request, CancellationToken cancellationToken)
+    {
+         var tasks = await _repository.GetUserTasksAsync(request.UserId);
+
+         if(tasks == null)
+         {
+            return Result<List<TaskDto>>.FailureResult("No tasks found for the user.");
+         }
+
+        //  group the tasks by project id uisng dictionary
+         var dict = tasks
+            .GroupBy(task => task.ProjectId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var result = await _projectRepository.GetWorkspaceProjectsAsync(request.WorkspaceId);
+        
+        // chwck which keys(projectid) in the dictionary belong to the workspace id
+       var groupedDict = dict
+            .Where(pair => result.Any(p => p.Id == pair.Key))
+            .ToDictionary(x => x.Key, x => x.Value);
+
+        var valueList = groupedDict.Values.ToList();
+
+        return Result<List<TaskDto>>.SuccessResult(data:_mapper.Map<List<TaskDto>>(valueList), message: "Tasks retrieved successfully.");
+
+        
+        // then check if the project id belongs to the workspace id
+        // foreach (var group in grouped)
+        // {
+        //     work
+        // }
+        // // if it does then return the tasks
+        // // else return empty list
+        //  var filteredTasks = tasks.Where(t => t.WorkspaceId == request.WorkspaceId).ToList();
+
+        // return _mapper.Map<List<TaskDto>>(tasks);
+    }
+
 }

@@ -1,22 +1,18 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Clock, AlertTriangle, User } from "lucide-react";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
+import { useUserTasksByWorkspaceId } from "../hooks/queries/useTaskQueries";
+import { useAuthStore } from "../stores/useAuthStore";
 
 export default function TasksSummary() {
 
     const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
-    const user = { id: 'user_1' }
-    const [tasks, setTasks] = useState([]);
 
-    // Get all tasks for all projects in current workspace
-    useEffect(() => {
-        if (currentWorkspace) {
-            setTasks(currentWorkspace.projects.flatMap((project) => project.tasks));
-        }
-    }, [currentWorkspace]);
+    const {user} = useAuthStore(state => state);
+    const {data: tasks = [], isLoading: isTasksLoading} = useUserTasksByWorkspaceId(currentWorkspace?.id, user.id)
 
     const myTasks = tasks.filter(i => i.assigneeId === user.id);
-    const overdueTasks = tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'DONE');
+    const overdueTasks = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'DONE');
     const inProgressIssues = tasks.filter(i => i.status === 'IN_PROGRESS');
 
     const summaryCards = [
@@ -42,6 +38,10 @@ export default function TasksSummary() {
             items: inProgressIssues.slice(0, 3)
         }
     ];
+
+    if (isTasksLoading) {
+        return <div>Loading...</div>;
+    }
 
     return (
         <div className="space-y-6">

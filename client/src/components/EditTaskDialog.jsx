@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { Calendar as CalendarIcon, X } from "lucide-react";
 import { format } from "date-fns";
-import { useWorkspaceStore } from "../stores/useWorkspaceStore";
-import { taskService } from "../services";
+import { useUpdateTask, useProjectMembers } from "../hooks";
+import { useAuthStore } from "../stores/useAuthStore";
 
 export default function EditTaskDialog({ showEditTask, setShowEditTask, task, projectId }) {
-    const currentWorkspace = useWorkspaceStore((state) => state?.currentWorkspace || null);
-    const fetchWorkspaceById = useWorkspaceStore((state) => state.fetchWorkspaceById);
-    const project = currentWorkspace?.projects.find((p) => p.id === projectId);
-    const teamMembers = project?.members || [];
+    const { mutate: updateTask, isPending: isSubmitting, error: mutationError } = useUpdateTask();
+    const { data: members = [] } = useProjectMembers(projectId);
+    const { user } = useAuthStore(state => state)
 
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState(null);
+    // const [isSubmitting, setIsSubmitting] = useState(false); // managed by mutation
+    const error = mutationError?.message;
+    // const [error, setError] = useState(null);
     const [formData, setFormData] = useState({
         title: "",
         description: "",
@@ -37,39 +37,30 @@ export default function EditTaskDialog({ showEditTask, setShowEditTask, task, pr
         }
     }, [task]);
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        setError(null);
-        setIsSubmitting(true);
 
-        try {
-            // Prepare task data for backend
-            const taskData = {
-                Title: formData.title,
-                Description: formData.description || null,
-                Type: formData.type,
-                Status: formData.status,
-                Priority: formData.priority,
-                AssigneeId: formData.assigneeId || null,
-                DueDate: formData.due_date || null,
-            };
+        // Prepare task data for backend
+        const taskData = {
+            Title: formData.title,
+            Description: formData.description || null,
+            Type: formData.type,
+            Status: formData.status,
+            Priority: formData.priority,
+            AssigneeId: formData.assigneeId || null,
+            DueDate: formData.due_date || null,
+            UserId: user.id,
+            Id: task.id
+        };
 
-            // Update the task
-            await taskService.update(task.id, taskData);
-
-            // Refresh workspace to get updated tasks
-            if (currentWorkspace?.id) {
-                await fetchWorkspaceById(currentWorkspace.id, true, true);
+        updateTask({
+            id: task.id,
+            data: taskData
+        }, {
+            onSuccess: () => {
+                setShowEditTask(false);
             }
-
-            // Close dialog
-            setShowEditTask(false);
-        } catch (err) {
-            console.error("Failed to update task:", err);
-            setError(err.message || "Failed to update task. Please try again.");
-        } finally {
-            setIsSubmitting(false);
-        }
+        });
     };
 
     if (!showEditTask || !task) return null;
@@ -136,7 +127,7 @@ export default function EditTaskDialog({ showEditTask, setShowEditTask, task, pr
                             <label className="text-sm font-medium">Assignee</label>
                             <select value={formData.assigneeId} onChange={(e) => setFormData({ ...formData, assigneeId: e.target.value })} className="w-full rounded dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1" >
                                 <option value="">Unassigned</option>
-                                {teamMembers.map((member) => (
+                                {members.map((member) => (
                                     <option key={member?.user.id} value={member?.user.id}>
                                         {member?.user.email}
                                     </option>

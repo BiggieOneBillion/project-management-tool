@@ -26,3 +26,8 @@ public record UpdateProjectCommand(
 ) : IRequest<ProjectDto>;
 
 public record DeleteProjectCommand(string Id) : IRequest<Unit>;
+
+public record AddProjectMemberCommand(
+    string ProjectId,
+    string Email
+) : IRequest<ProjectDto>;

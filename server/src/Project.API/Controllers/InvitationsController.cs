@@ -27,7 +27,6 @@ public class InvitationsController : ControllerBase
         try
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            Console.WriteLine("User ID: " + userId);
             if (string.IsNullOrEmpty(userId))
             {
                 return Unauthorized(new { success = false, message = "Invalid token" });
@@ -40,8 +39,6 @@ public class InvitationsController : ControllerBase
                 userId
             );
 
-            Console.WriteLine("Command created for email: " + request.Email);
-
             var invitation = await _mediator.Send(command);
 
             return Ok(new
@@ -50,6 +47,10 @@ public class InvitationsController : ControllerBase
                 data = invitation,
                 message = "Invitation sent successfully"
             });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { success = false, message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
@@ -146,6 +147,10 @@ public class InvitationsController : ControllerBase
                 message = "Invitation revoked successfully"
             });
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { success = false, message = ex.Message });
+        }
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { success = false, message = ex.Message });
@@ -169,7 +174,7 @@ public class InvitationsController : ControllerBase
                 return Unauthorized(new { success = false, message = "Invalid token" });
             }
 
-            var query = new GetWorkspaceInvitationsQuery(workspaceId, status);
+            var query = new GetWorkspaceInvitationsQuery(workspaceId, userId, status);
             var invitations = await _mediator.Send(query);
 
             return Ok(new
@@ -178,6 +183,10 @@ public class InvitationsController : ControllerBase
                 data = invitations,
                 message = $"Retrieved {invitations.Count} invitation(s)"
             });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { success = false, message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -191,13 +200,19 @@ public class InvitationsController : ControllerBase
     {
         try
         {
-            // This endpoint can be used by non-authenticated users to check their invitations
-            // In a real app, you might want to send this via email or require some verification
-            
+            if (string.IsNullOrEmpty(email))
+            {
+                return BadRequest(new { success = false, message = "Email is required" });
+            }
+
+            var query = new GetUserPendingInvitationsQuery(email);
+            var invitations = await _mediator.Send(query);
+
             return Ok(new
             {
                 success = true,
-                message = "Use the invitation token from your email to accept"
+                data = invitations,
+                message = $"Retrieved {invitations.Count} pending invitation(s)"
             });
         }
         catch (Exception ex)

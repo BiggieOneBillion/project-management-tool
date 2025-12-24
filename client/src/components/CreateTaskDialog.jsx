@@ -1,16 +1,15 @@
 import { useState } from "react";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
-import { useWorkspaceStore } from "../stores/useWorkspaceStore";
-import { taskService } from "../services";
+import { useCreateTask, useProjectMembers } from "../hooks";
+import { useAuthStore } from "../stores/useAuthStore";
 
 export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, projectId }) {
-    const currentWorkspace = useWorkspaceStore((state) => state?.currentWorkspace || null);
-    const fetchWorkspaceById = useWorkspaceStore((state) => state.fetchWorkspaceById);
-    const project = currentWorkspace?.projects.find((p) => p.id === projectId);
-    const teamMembers = project?.members || [];
-
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { mutate: createTask, isPending: isSubmitting } = useCreateTask();
+    const { data: members = [] } = useProjectMembers(projectId);
+    const {user} = useAuthStore(state => state)
+    
+    // const [isSubmitting, setIsSubmitting] = useState(false); // managed by mutation
     const [error, setError] = useState(null);
     const [formData, setFormData] = useState({
         title: "",
@@ -25,48 +24,37 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
-        setIsSubmitting(true);
+        // Prepare task data for backend
+        const taskData = {
+            Title: formData.title,
+            Description: formData.description || null,
+            Type: formData.type,
+            Status: formData.status,
+            Priority: formData.priority,
+            ProjectId: projectId,
+            AssigneeId: formData.assigneeId || null,
+            DueDate: formData.due_date || null,
+            UserId: user.id
+        };
 
-        try {
-            // Prepare task data for backend
-            const taskData = {
-                Title: formData.title,
-                Description: formData.description || null,
-                Type: formData.type,
-                Status: formData.status,
-                Priority: formData.priority,
-                ProjectId: projectId,
-                AssigneeId: formData.assigneeId || null,
-                DueDate: formData.due_date || null,
-            };
-
-            // Create the task
-            await taskService.create(taskData);
-
-            // Reset form
-            setFormData({
-                title: "",
-                description: "",
-                type: "TASK",
-                status: "TODO",
-                priority: "MEDIUM",
-                assigneeId: "",
-                due_date: "",
-            });
-
-            // Refresh workspace to get updated tasks
-            if (currentWorkspace?.id) {
-                await fetchWorkspaceById(currentWorkspace.id, true, true);
+        createTask(taskData, {
+            onSuccess: () => {
+                // Reset form
+                setFormData({
+                    title: "",
+                    description: "",
+                    type: "TASK",
+                    status: "TODO",
+                    priority: "MEDIUM",
+                    assigneeId: "",
+                    due_date: "",
+                });
+                setShowCreateTask(false);
+            },
+            onError: (err) => {
+                setError(err.message || "Failed to create task");
             }
-
-            // Close dialog
-            setShowCreateTask(false);
-        } catch (err) {
-            console.error("Failed to create task:", err);
-            setError(err.message || "Failed to create task. Please try again.");
-        } finally {
-            setIsSubmitting(false);
-        }
+        });
     };
 
     return showCreateTask ? (
@@ -123,7 +111,7 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
                             <label className="text-sm font-medium">Assignee</label>
                             <select value={formData.assigneeId} onChange={(e) => setFormData({ ...formData, assigneeId: e.target.value })} className="w-full rounded dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1" >
                                 <option value="">Unassigned</option>
-                                {teamMembers.map((member) => (
+                                {members.map((member) => (
                                     <option key={member?.user.id} value={member?.user.id}>
                                         {member?.user.email}
                                     </option>

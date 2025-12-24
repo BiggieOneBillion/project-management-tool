@@ -39,136 +39,28 @@ export const useWorkspaceStore = create(
 
   clearError: () => set({ error: null }),
 
-  // Async actions
-  fetchWorkspaces: async (userId = null) => {
-    const { loading } = get();
-    if (loading) return;
-
-
-    // set({ loading: true, error: null });
-    try {
-      const response = await workspaceService.getAll(userId);
-      const workspaces = response.data;
-      
-      // Set current workspace from localStorage or first workspace
-      const savedId = localStorage.getItem('currentWorkspaceId');
-      let currentWorkspace = null;
-      
-      if (savedId) {
-        currentWorkspace = workspaces.find((w) => w.id === savedId) || workspaces[0];
-      } else if (workspaces.length > 0) {
-        currentWorkspace = workspaces[0];
-      }
-
-      set({ 
-        workspaces, 
-        currentWorkspace,
-        loading: false, 
-        lastFetched: Date.now() 
-      });
-    } catch (error) {
-      set({ 
-        loading: false, 
-        error: error.message || 'Failed to fetch workspaces' 
-      });
-    }
-  },
-
-  fetchWorkspaceById: async (id, includeMembers = false, includeProjects = false) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await workspaceService.getById(id, includeMembers, includeProjects);
-      const workspace = response.data;
-      
-      set((state) => {
-        // Update in workspaces array
-        const workspaces = state.workspaces.map((w) => 
-          w.id === workspace.id ? workspace : w
-        );
-        
-        return {
-          workspaces,
-          currentWorkspace: workspace,
-          loading: false
-        };
-      });
-    } catch (error) {
-      set({ 
-        loading: false, 
-        error: error.message || 'Failed to fetch workspace' 
-      });
-    }
-  },
-
-  createWorkspace: async (workspaceData) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await workspaceService.create(workspaceData);
-      const workspace = response.data;
-      
-      localStorage.setItem('currentWorkspaceId', workspace.id);
-      
-      set((state) => ({
-        workspaces: [...state.workspaces, workspace],
-        currentWorkspace: workspace,
-        loading: false
-      }));
-      
-      return workspace;
-    } catch (error) {
-      const errorMessage = error.message || 'Failed to create workspace';
-      set({ 
-        loading: false, 
-        error: errorMessage
-      });
-      throw new Error(errorMessage);
-    }
-  },
-
-  updateWorkspace: async (id, data) => {
-    try {
-      const response = await workspaceService.update(id, data);
-      const workspace = response.data;
-      
-      set((state) => {
-        const workspaces = state.workspaces.map((w) => 
-          w.id === workspace.id ? workspace : w
-        );
-        
-        const currentWorkspace = state.currentWorkspace?.id === workspace.id 
-          ? workspace 
-          : state.currentWorkspace;
-        
-        return { workspaces, currentWorkspace };
-      });
-    } catch (error) {
-      set({ error: error.message || 'Failed to update workspace' });
-    }
-  },
-
-  deleteWorkspace: async (id) => {
-    try {
-      await workspaceService.delete(id);
-      
-      set((state) => {
-        const workspaces = state.workspaces.filter((w) => w.id !== id);
-        let currentWorkspace = state.currentWorkspace;
-        
-        if (state.currentWorkspace?.id === id) {
-          currentWorkspace = workspaces[0] || null;
-          if (currentWorkspace) {
-            localStorage.setItem('currentWorkspaceId', currentWorkspace.id);
-          } else {
-            localStorage.removeItem('currentWorkspaceId');
-          }
+  // Async actions removed (replaced by React Query hooks)
+  
+  // Setters for syncing with React Query
+  setWorkspaces: (workspaces) => {
+    set({ workspaces, loading: false, lastFetched: Date.now() });
+    
+    // Ensure currentWorkspace is valid
+    const { currentWorkspace } = get();
+    if (currentWorkspace) {
+        const updated = workspaces.find(w => w.id === currentWorkspace.id);
+        if (updated) {
+            set({ currentWorkspace: updated });
         }
-        
-        return { workspaces, currentWorkspace };
-      });
-    } catch (error) {
-      set({ error: error.message || 'Failed to delete workspace' });
+    } else if (workspaces.length > 0) {
+        // Only set default if none selected
+        set({ currentWorkspace: workspaces[0] }); 
+        // Actually, we might want to respect localStorage preference if applied elsewhere
     }
   },
+
+  // Removed fetchWorkspaceById, createWorkspace, updateWorkspace, deleteWorkspace
+  // These are handled by React Query hooks which call setWorkspaces or invalidate queries.
 
   // Legacy actions for backward compatibility
   addProject: (project) => {

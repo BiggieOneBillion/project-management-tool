@@ -30,11 +30,21 @@ public class InviteToWorkspaceCommandHandler : IRequestHandler<InviteToWorkspace
 
     public async Task<InvitationDto> Handle(InviteToWorkspaceCommand request, CancellationToken cancellationToken)
     {
-        // Verify workspace exists
-        var workspace = await _workspaceRepository.GetByIdAsync(request.WorkspaceId);
+        // Verify workspace exists and get with members to check permissions
+        var workspace = await _workspaceRepository.GetWithMembersAsync(request.WorkspaceId);
         if (workspace == null)
         {
             throw new InvalidOperationException("Workspace not found");
+        }
+
+        // Authorization: Only workspace owner or admin can invite users
+        var isOwner = workspace.OwnerId == request.InvitedById;
+        var member = workspace.Members.FirstOrDefault(m => m.UserId == request.InvitedById);
+        var isAdmin = member?.Role == CORE.ValueObjects.WorkspaceRole.ADMIN;
+
+        if (!isOwner && !isAdmin)
+        {
+            throw new UnauthorizedAccessException("Only workspace owners or admins can invite users");
         }
 
         // Check if user is already invited or is a member
@@ -242,10 +252,14 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
 public class RevokeInvitationCommandHandler : IRequestHandler<RevokeInvitationCommand, Unit>
 {
     private readonly IInvitationRepository _invitationRepository;
+    private readonly IWorkspaceRepository _workspaceRepository;
 
-    public RevokeInvitationCommandHandler(IInvitationRepository invitationRepository)
+    public RevokeInvitationCommandHandler(
+        IInvitationRepository invitationRepository,
+        IWorkspaceRepository workspaceRepository)
     {
         _invitationRepository = invitationRepository;
+        _workspaceRepository = workspaceRepository;
     }
 
     public async Task<Unit> Handle(RevokeInvitationCommand request, CancellationToken cancellationToken)
@@ -260,6 +274,23 @@ public class RevokeInvitationCommandHandler : IRequestHandler<RevokeInvitationCo
         if (invitation.Status != InvitationStatus.PENDING)
         {
             throw new InvalidOperationException("Only pending invitations can be revoked");
+        }
+
+        // Authorization: Only workspace owner or admin can revoke invitations
+        if (invitation.WorkspaceId != null)
+        {
+            var workspace = await _workspaceRepository.GetWithMembersAsync(invitation.WorkspaceId);
+            if (workspace != null)
+            {
+                var isOwner = workspace.OwnerId == request.UserId;
+                var member = workspace.Members.FirstOrDefault(m => m.UserId == request.UserId);
+                var isAdmin = member?.Role == CORE.ValueObjects.WorkspaceRole.ADMIN;
+
+                if (!isOwner && !isAdmin)
+                {
+                    throw new UnauthorizedAccessException("Only workspace owners or admins can revoke invitations");
+                }
+            }
         }
 
         invitation.Status = InvitationStatus.REVOKED;

@@ -4,18 +4,21 @@ import { Link } from 'react-router-dom';
 import { useWorkspaceStore } from '../stores/useWorkspaceStore';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useTaskStore } from '../stores/useTaskStore';
+import { useProjectTasks } from '../hooks/queries/useTaskQueries';
+import { useProjectStore } from '../stores/useProjectStore';
 
 function MyTasksSidebar() {
 
 
     const {user} = useAuthStore(state => state)
-    const {fetchTasks, tasks} = useTaskStore(state => state)
 
-    // const {fetchProjects, projects} = useProjectStore(state => state)
+    // const {tasks} = useTaskStore(state => state)
 
-    const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
+    const {currentProject} =  useProjectStore(state => state)
+
+    const {data: tasks = [], isLoading: isTasksLoading} = useProjectTasks(currentProject?.id)
+
     const [showMyTasks, setShowMyTasks] = useState(false);
-    const [myTasks, setMyTasks] = useState([]);
 
     const toggleMyTasks = () => setShowMyTasks(prev => !prev);
 
@@ -32,20 +35,11 @@ function MyTasksSidebar() {
         }
     };
 
-    const fetchUserTasks = () => {
-        const userId = user?.id || '';
-        if (!userId || !currentWorkspace) return;
-        // const currentWorkspaceTasks = currentWorkspace.projects?.flatMap((project) => {
-        //     return project.tasks.filter((task) => task?.assignee?.id === userId);
-        // });
-
-        setMyTasks(tasks);
-        fetchTasks({projectId: currentWorkspace.id, userId:user.id})
+    if (isTasksLoading) {
+        return <div>Loading...</div>
     }
 
-    useEffect(() => {
-        fetchUserTasks()
-    }, [currentWorkspace])
+    // console.log(tasks, currentProject)
 
     return (
         <div className="mt-6 px-3">
@@ -54,7 +48,7 @@ function MyTasksSidebar() {
                     <CheckSquareIcon className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
                     <h3 className="text-sm font-medium text-gray-700 dark:text-zinc-300">My Tasks</h3>
                     <span className="bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300 text-xs px-2 py-0.5 rounded">
-                        {myTasks.length}
+                        {tasks.length}
                     </span>
                 </div>
                 {showMyTasks ? (
@@ -67,22 +61,22 @@ function MyTasksSidebar() {
             {showMyTasks && (
                 <div className="mt-2 pl-2">
                     <div className="space-y-1">
-                        {myTasks.length === 0 ? (
+                        {tasks.length === 0 ? (
                             <div className="px-3 py-2 text-xs text-gray-500 dark:text-zinc-500 text-center">
                                 No tasks assigned
                             </div>
                         ) : (
-                            myTasks.map((task, index) => (
+                            tasks.map((task, index) => (
                                 <Link key={index} to={`/taskDetails?projectId=${task.projectId}&taskId=${task.id}`} className="w-full rounded-lg transition-all duration-200 text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white" >
                                     <div className="flex items-center gap-2 px-3 py-2 w-full min-w-0">
                                         <div className={`w-2 h-2 rounded-full ${getTaskStatusColor(task.status)} flex-shrink-0`} />
                                         <div className="flex-1 min-w-0">
                                             <p className="text-xs font-medium truncate">
-                                                {task.title}
+                                                {task.title.slice(0, 20)}...
                                             </p>
-                                            <p className="text-xs text-gray-500 dark:text-zinc-500 lowercase">
-                                                {task.status.replace('_', ' ')}
-                                            </p>
+                                            {/* <p className="text-xs text-gray-500 dark:text-zinc-500 lowercase">
+                                                {task?.status.replace('_', ' ')}
+                                            </p> */}
                                         </div>
                                     </div>
                                 </Link>

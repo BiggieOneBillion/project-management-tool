@@ -154,7 +154,7 @@ export const useAuthStore = create(
     }),
     {
       name: 'auth-storage',
-      storage: createJSONStorage(() => localStorage), // Use localStorage for auth (persists across sessions)
+      storage: createJSONStorage(() => sessionStorage), // Use localStorage for auth (persists across sessions)
       partialize: (state) => ({
         // Only persist these fields
         user: state.user,

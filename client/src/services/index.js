@@ -26,11 +26,10 @@ export const workspaceService = {
 };
 
 export const projectService = {
-  getAll: async (workspaceId = null, includeTasks = false) => {
+  getAll: async (workspaceId = null, includeTasks = true) => {
     const params = {};
-    if (workspaceId) params.workspaceId = workspaceId;
     if (includeTasks) params.includeTasks = includeTasks;
-    return await api.get('/projects', { params });
+    return await api.get(`/projects?workspaceId=${workspaceId}`, { params });
   },
 
   getById: async (id, includeTasks = false, includeMembers = false) => {
@@ -44,6 +43,18 @@ export const projectService = {
     return response;
   },
 
+  getProjectMembersList: async (projectId) => {
+    const response = await api.get(`/projects/${projectId}/members/list`);
+    return response;
+  },
+
+  getAvailableWorkspaceMembers: async (projectId, workspaceId) => {
+    const response = await api.get(`/projects/${projectId}/available-members`, {
+      params: { workspaceId }
+    });
+    return response;
+  },
+
   create: async (data) => {
     return await api.post('/projects', data);
   },
@@ -54,6 +65,10 @@ export const projectService = {
 
   delete: async (id) => {
     return await api.delete(`/projects/${id}`);
+  },
+
+  addMemberToProject: async (projectId, email) => {
+    return await api.post(`/projects/${projectId}/members`, { email });
   },
 };
 
@@ -70,6 +85,10 @@ export const taskService = {
     return await api.get(`/tasks/${id}`, {
       params: { includeComments },
     });
+  },
+
+   getByWorkspaceId: async (workspaceId, userId) => {
+    return await api.get(`/tasks/workspace/${workspaceId}?userId=${userId}`);
   },
 
   create: async (data) => {
@@ -161,12 +180,14 @@ export const authService = {
 };
 
 export const invitationService = {
-  inviteToWorkspace: async (workspaceId, email, role) => {
-    return await api.post('/invitations/workspace', {
-      WorkspaceId: workspaceId,
-      Email: email,
-      Role: role,
-    });
+  inviteToWorkspace: async (params) => {
+    const payload = {
+      WorkspaceId: params.workspaceId,
+      Email: params.email,
+      Role: params.role,
+    }
+
+    return await api.post('/invitations/workspace', payload);
   },
 
   getWorkspaceInvitations: async (workspaceId, status = 'PENDING') => {

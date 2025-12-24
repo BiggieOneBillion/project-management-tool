@@ -96,3 +96,53 @@ public class DeleteProjectCommandHandler : IRequestHandler<DeleteProjectCommand,
         return Unit.Value;
     }
 }
+
+public class AddProjectMemberCommandHandler : IRequestHandler<AddProjectMemberCommand, ProjectDto>
+{
+    private readonly IProjectRepository _projectRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly IMapper _mapper;
+    
+    public AddProjectMemberCommandHandler(
+        IProjectRepository projectRepository, 
+        IUserRepository userRepository,
+        IMapper mapper)
+    {
+        _projectRepository = projectRepository;
+        _userRepository = userRepository;
+        _mapper = mapper;
+    }
+    
+    public async Task<ProjectDto> Handle(AddProjectMemberCommand request, CancellationToken cancellationToken)
+    {
+        // Get the project
+        var project = await _projectRepository.GetWithMembersAsync(request.ProjectId);
+        if (project == null)
+            throw new EntityNotFoundException("Project", request.ProjectId);
+        
+        // Get the user by email
+        var user = await _userRepository.GetByEmailAsync(request.Email);
+        if (user == null)
+            throw new EntityNotFoundException("User with email", request.Email);
+        
+        // Check if user is already a member
+        if (project.Members.Any(m => m.UserId == user.Id))
+            throw new InvalidOperationException($"User {request.Email} is already a member of this project");
+        
+        // Add the member
+        var projectMember = new ProjectMember
+        {
+            Id = Guid.NewGuid().ToString(),
+            UserId = user.Id,
+            ProjectId = request.ProjectId,
+            AddedAt = DateTime.UtcNow
+        };
+        
+        project.Members.Add(projectMember);
+        await _projectRepository.UpdateAsync(project);
+        
+        // Return updated project with members
+        var updatedProject = await _projectRepository.GetWithMembersAsync(request.ProjectId);
+        return _mapper.Map<ProjectDto>(updatedProject);
+    }
+}

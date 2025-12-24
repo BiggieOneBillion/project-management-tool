@@ -18,19 +18,29 @@ import { useWorkspaceStore } from "../stores/useWorkspaceStore";
 import { useProjectStore } from "../stores/useProjectStore";
 import { useTaskStore } from "../stores/useTaskStore";
 import { useAuthStore } from "../stores/useAuthStore";
+import { usePendingInvitations, useWorkspaces } from "../hooks";
+import InvitationBanner from "../components/InvitationBanner";
 
 const Dashboard = () => {
-  // const user = { fullName: "User", id: "user_1" }; // Placeholder user object
   const {user} = useAuthStore(state => state)
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  const {loading:workspacesLoading, fetchWorkspaces } = useWorkspaceStore((state) => state);
-  const {loading:projectsLoading} = useProjectStore((state) => state);
-  const {loading:tasksLoading} = useTaskStore((state) => state);
+  const { data: invitations , isLoading:isLoadingWell } = usePendingInvitations(user?.email);
+   
+  const { currentWorkspace } = useWorkspaceStore();
+  const {projects} = useProjectStore(state => state)
+  const {tasks} = useTaskStore(state => state)
 
-  console.log(user)
+  const { data: workspaces = [], isLoading: workspacesLoading, error } = useWorkspaces();
+
+  if (error) {
+    toast.error(error?.message || "Failed to load workspaces");
+  }
+
+  const isLoading = workspacesLoading;
 
   // Check for create=workspace query parameter
   useEffect(() => {
@@ -41,39 +51,19 @@ const Dashboard = () => {
     }
   }, [searchParams, setSearchParams]);
 
-  useEffect(()=>{
-    fetchWorkspaces(user?.id);
-  },[])
-
-//   useEffect(() => {
-//     // Only fetch if needed (no data, not loading, or cache expired)
-//     if (shouldFetchWorkspaces({ workspace: workspaceState })) {
-//       dispatch(fetchWorkspaces(user.id))
-//         .unwrap()
-//         .catch((error) => {
-//           toast.error(error || "Failed to load workspaces");
-//         });
-//     }
-//   }, [dispatch]); // dispatch is stable and won't cause re-renders
-
-  const isLoading = workspacesLoading 
-  // || projectsLoading || tasksLoading;
-
   if (isLoading) {
-    return (
-      <div className="max-w-6xl mx-auto flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-500 dark:text-zinc-400">
-            Loading dashboard...
-          </p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
+
+    console.log("invitations", invitations, isLoadingWell, user?.email);
+
+  // No need to check for workspaces here - WorkspaceProtectedRoute handles this
 
   return (
     <div className="max-w-6xl mx-auto">
+      {/* Invitation Banner */}
+      <InvitationBanner />
+
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 ">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-1">

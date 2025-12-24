@@ -2,63 +2,59 @@ import { useEffect, useState } from "react";
 import { UsersIcon, Search, UserPlus, Shield, Activity, Clock, X } from "lucide-react";
 import InviteMemberDialog from "../components/InviteMemberDialog";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
-import { useTaskStore } from "../stores/useTaskStore";
-import { invitationService } from "../services";
+import { useAuthStore } from "../stores/useAuthStore";
+import { useWorkspaceMembers, useWorkspaceInvitations, useRevokeInvitation, useProjects } from "../hooks";
+import TeamSkeleton from "../components/skeletons/TeamSkeleton";
 
 const Team = () => {
 
     // const [tasks, setTasks] = useState([]);
-    const [tasksCount, setTasksCount] = useState(0);
+    // const [tasksCount, setTasksCount] = useState(0);
     const [searchTerm, setSearchTerm] = useState("");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [users, setUsers] = useState([]);
-    const [pendingInvitations, setPendingInvitations] = useState([]);
-    const [isLoadingInvitations, setIsLoadingInvitations] = useState(false);
-    const currentWorkspace = useWorkspaceStore((state) => state?.currentWorkspace || null);
-    const projects = currentWorkspace?.projects || [];
-    const {fetchTasks, tasks:workspaceTask} = useTaskStore(state => state)
     
+    // React Query Hooks
+    const currentWorkspace = useWorkspaceStore((state) => state?.currentWorkspace || null);
+    const { user } = useAuthStore();
+    const workspaceId = currentWorkspace?.id;
+    
+    const { data: users , isLoading:isLoadingMembers } = useWorkspaceMembers(workspaceId);
+    const { data: pendingInvitations = [], isLoading: isLoadingInvitations } = useWorkspaceInvitations(workspaceId);
+    const { data: projects = [] } = useProjects(workspaceId);
+    const { mutate: revokeInvitation } = useRevokeInvitation();
 
-    const filteredUsers = users.filter(
+    // Check if current user is owner or admin
+    const isOwner = currentWorkspace?.ownerId === user?.id;
+    const currentMember = users?.members.find(m => m.userId === user?.id);
+    const isAdmin = currentMember?.role === 'ADMIN' || currentMember?.role === 2; // 2 is ADMIN enum value
+    const canManageInvitations = isOwner || isAdmin;
+
+    // Derived state
+    const tasksCount = projects?.reduce((acc, p) => acc + (p.taskCount || 0), 0);
+
+    const filteredUsers = users?.members.filter(
         (user) =>
-            user?.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user?.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+            user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const fetchPendingInvitations = async () => {
-        if (!currentWorkspace?.id) return;
-        
-        setIsLoadingInvitations(true);
-        try {
-            const response = await invitationService.getWorkspaceInvitations(currentWorkspace.id);
-            setPendingInvitations(response.data || []);
-        } catch (error) {
-            console.error("Failed to fetch pending invitations:", error);
-        } finally {
-            setIsLoadingInvitations(false);
-        }
+    const handleRevokeInvitation = (invitationId) => {
+        revokeInvitation(invitationId);
     };
 
-    const handleRevokeInvitation = async (invitationId) => {
-        try {
-            await invitationService.revokeInvitation(invitationId);
-            // Refresh the invitations list
-            await fetchPendingInvitations();
-        } catch (error) {
-            console.error("Failed to revoke invitation:", error);
-        }
-    };
+    // Removed manual fetching and effects
 
-    console.log("CURRENT WORKSPACE", currentWorkspace)
+    const totalTasks = projects?.reduce((acc, p) => acc + (p.taskCount || 0), 0);
 
-    useEffect(() => {
-        setUsers(currentWorkspace?.members || []);
-        // setTasks(currentWorkspace?.projects?.reduce((acc, project) => [...acc, ...project.tasks], []) || []);
-        setTasksCount(currentWorkspace?.projects?.reduce((acc, project) => acc + project.taskCount, 0) || 0);
-        fetchPendingInvitations();
-    }, [currentWorkspace]);
+    // Show skeleton while loading
+    if (
+        isLoadingMembers
+        || 
+        isLoadingInvitations) {
+        return <TeamSkeleton />;
+    }
 
-    // console.log("Current Workspace Members:", currentWorkspace);
+    console.log("USERS----", users)
 
     return (
         <div className="space-y-6 max-w-6xl mx-auto">
@@ -70,9 +66,11 @@ const Team = () => {
                         Manage team members and their contributions
                     </p>
                 </div>
-                <button onClick={() => setIsDialogOpen(true)} className="flex items-center px-5 py-2 rounded text-sm bg-gradient-to-br from-blue-500 to-blue-600 hover:opacity-90 text-white transition" >
-                    <UserPlus className="w-4 h-4 mr-2" /> Invite Member
-                </button>
+                {canManageInvitations && (
+                    <button onClick={() => setIsDialogOpen(true)} className="flex items-center px-5 py-2 rounded text-sm bg-gradient-to-br from-blue-500 to-blue-600 hover:opacity-90 text-white transition" >
+                        <UserPlus className="w-4 h-4 mr-2" /> Invite Member
+                    </button>
+                )}
                 <InviteMemberDialog isDialogOpen={isDialogOpen} setIsDialogOpen={setIsDialogOpen} />
             </div>
 
@@ -83,7 +81,7 @@ const Team = () => {
                     <div className="flex items-center justify-between gap-8 md:gap-22">
                         <div>
                             <p className="text-sm text-gray-500 dark:text-zinc-400">Total Members</p>
-                            <p className="text-xl font-bold text-gray-900 dark:text-white">{users.length}</p>
+                            <p className="text-xl font-bold text-gray-900 dark:text-white">{users.members.length}</p>
                         </div>
                         <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-500/10">
                             <UsersIcon className="size-4 text-blue-500 dark:text-blue-200" />
@@ -97,7 +95,7 @@ const Team = () => {
                         <div>
                             <p className="text-sm text-gray-500 dark:text-zinc-400">Active Projects</p>
                             <p className="text-xl font-bold text-gray-900 dark:text-white">
-                                {projects.filter((p) => p.status !== "CANCELLED" && p.status !== "COMPLETED").length}
+                                {users?.projects?.filter((p) => p.status !== "CANCELLED" && p.status !== "COMPLETED").length}
                             </p>
                         </div>
                         <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-500/10">
@@ -166,13 +164,15 @@ const Team = () => {
                                             {new Date(invitation.createdAt).toLocaleDateString()}
                                         </td>
                                         <td className="px-6 py-3 whitespace-nowrap">
-                                            <button
-                                                onClick={() => handleRevokeInvitation(invitation.id)}
-                                                className="flex items-center gap-1 px-3 py-1 text-xs rounded-md bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-500/30 transition"
-                                            >
-                                                <X className="w-3 h-3" />
-                                                Revoke
-                                            </button>
+                                            {canManageInvitations && (
+                                                <button
+                                                    onClick={() => handleRevokeInvitation(invitation.id)}
+                                                    className="flex items-center gap-1 px-3 py-1 text-xs rounded-md bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-500/30 transition"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                    Revoke
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

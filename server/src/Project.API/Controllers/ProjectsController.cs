@@ -127,4 +127,54 @@ public class ProjectsController : ControllerBase
             return StatusCode(500, new { success = false, message = ex.Message });
         }
     }
+    
+    [HttpGet("{id}/members/list")]
+    public async Task<IActionResult> GetProjectMembersList(string id)
+    {
+        try
+        {
+            var query = new GetProjectMembersQuery(id);
+            var members = await _mediator.Send(query);
+            return Ok(new { success = true, data = members });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
+    }
+    
+    [HttpGet("{id}/available-members")]
+    public async Task<IActionResult> GetAvailableWorkspaceMembers(string id, [FromQuery] string workspaceId)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(workspaceId))
+                return BadRequest(new { success = false, message = "WorkspaceId is required" });
+            
+            var query = new GetAvailableWorkspaceMembersQuery(id, workspaceId);
+            var members = await _mediator.Send(query);
+            return Ok(new { success = true, data = members });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
+    }
+    
+    [HttpPost("{id}/members")]
+    public async Task<IActionResult> AddProjectMember(string id, [FromBody] AddProjectMemberRequest request)
+    {
+        try
+        {
+            var command = new AddProjectMemberCommand(id, request.Email);
+            var project = await _mediator.Send(command);
+            return Ok(new { success = true, data = project, message = "Member added successfully" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
+    }
 }
+
+public record AddProjectMemberRequest(string Email);
