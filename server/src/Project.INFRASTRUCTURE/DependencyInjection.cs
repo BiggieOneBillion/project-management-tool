@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Project.CORE.Entities;
 using Project.CORE.Interfaces;
 using Project.INFRASTRUCTURE.Data;
 using Project.INFRASTRUCTURE.Repositories;
@@ -23,6 +24,8 @@ public static class DependencyInjection
                 b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
         
         // Repositories
+        services.AddScoped<IRepository<Comment>, CommentRepository>();
+        services.AddScoped<IRepository<Note>, NoteRepository>();
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
         services.AddScoped<IProjectRepository, ProjectRepository>();

@@ -18,6 +18,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<TaskEntity> Tasks { get; set; } = null!;
     public DbSet<Comment> Comments { get; set; } = null!;
     public DbSet<Invitation> Invitations { get; set; } = null!;
+    public DbSet<Note> Notes { get; set; } = null!;
+    public DbSet<NoteMention> NoteMentions { get; set; } = null!;
+    public DbSet<NoteAttachment> NoteAttachments { get; set; } = null!;
+    public DbSet<Notification> Notifications { get; set; } = null!;
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -45,6 +49,8 @@ public class ApplicationDbContext : DbContext
                 task.UpdatedAt = DateTime.UtcNow;
             else if (entry.Entity is Comment comment)
                 comment.UpdatedAt = DateTime.UtcNow;
+            else if (entry.Entity is Note note)
+                note.UpdatedAt = DateTime.UtcNow;
         }
         
         return base.SaveChangesAsync(cancellationToken);

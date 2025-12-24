@@ -2,6 +2,8 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Project.APPLICATION.Commands.Comment;
 using Project.APPLICATION.Queries.Comment;
+using Project.CORE.Interfaces;
+using System.Security.Claims;
 
 namespace Project.API.Controllers;
 
@@ -10,10 +12,12 @@ namespace Project.API.Controllers;
 public class CommentsController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IRepository<CORE.Entities.Comment> _commentRepository;
     
-    public CommentsController(IMediator mediator)
+    public CommentsController(IMediator mediator, IRepository<CORE.Entities.Comment> commentRepository)
     {
         _mediator = mediator;
+        _commentRepository = commentRepository;
     }
     
     [HttpGet]
@@ -36,8 +40,12 @@ public class CommentsController : ControllerBase
     {
         try
         {
-            // Ensure taskId from route is used
-            var createCommand = command with { TaskId = taskId };
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { success = false, message = "User not authenticated" });
+            
+            // Ensure taskId and userId from route/auth are used
+            var createCommand = command with { TaskId = taskId, UserId = userId };
             var comment = await _mediator.Send(createCommand);
             return Ok(new { success = true, data = comment, message = "Comment created successfully" });
         }
@@ -52,6 +60,18 @@ public class CommentsController : ControllerBase
     {
         try
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { success = false, message = "User not authenticated" });
+            
+            // Check ownership
+            var existingComment = await _commentRepository.GetByIdAsync(commentId);
+            if (existingComment == null)
+                return NotFound(new { success = false, message = "Comment not found" });
+            
+            if (existingComment.UserId != userId)
+                return Forbid();
+            
             var updateCommand = command with { Id = commentId };
             var comment = await _mediator.Send(updateCommand);
             return Ok(new { success = true, data = comment, message = "Comment updated successfully" });
@@ -67,6 +87,18 @@ public class CommentsController : ControllerBase
     {
         try
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { success = false, message = "User not authenticated" });
+            
+            // Check ownership
+            var existingComment = await _commentRepository.GetByIdAsync(commentId);
+            if (existingComment == null)
+                return NotFound(new { success = false, message = "Comment not found" });
+            
+            if (existingComment.UserId != userId)
+                return Forbid();
+            
             var command = new DeleteCommentCommand(commentId);
             await _mediator.Send(command);
             return Ok(new { success = true, message = "Comment deleted successfully" });

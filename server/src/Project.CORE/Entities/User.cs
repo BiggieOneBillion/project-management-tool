@@ -19,5 +19,7 @@ public class User
     public ICollection<ProjectEntity> LedProjects { get; set; } = new List<ProjectEntity>();
     public ICollection<ProjectMember> ProjectMemberships { get; set; } = new List<ProjectMember>();
     public ICollection<TaskEntity> AssignedTasks { get; set; } = new List<TaskEntity>();
+    public ICollection<Note> Notes { get; set; } = new List<Note>();
+    public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
 }

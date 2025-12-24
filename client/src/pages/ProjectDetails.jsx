@@ -18,7 +18,7 @@ import ProjectTasks from "../components/ProjectTasks";
 import { useWorkspaceStore } from "../stores/useWorkspaceStore";
 
 import { useAuthStore } from "../stores/useAuthStore";
-import { useProject, useProjectTasks } from "../hooks";
+import { useProject, useProjectMembers, useProjectTasks } from "../hooks";
 import { useTaskStore } from "../stores/useTaskStore";
 
 export default function ProjectDetail() {
@@ -40,6 +40,8 @@ export default function ProjectDetail() {
   const [selectedTask, setSelectedTask] = useState(null);
   const [activeTab, setActiveTab] = useState(tab || "tasks");
 
+  const { data: members, isLoading: isMembersLoading } = useProjectMembers(id);
+
   // Check if current user is workspace owner
   const isWorkspaceOwner = currentWorkspace?.ownerId === user?.id;
 
@@ -57,7 +59,7 @@ export default function ProjectDetail() {
     CANCELLED: "bg-red-200 text-red-900 dark:bg-red-500 dark:text-red-900",
   };
 
-  if (isProjectLoading || isTasksLoading) {
+  if (isProjectLoading || isTasksLoading || isMembersLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
@@ -132,7 +134,7 @@ export default function ProjectDetail() {
           },
           {
             label: "Team Members",
-            value: project.members?.length || 0,
+            value: members?.length || 0,
             color: "text-blue-700 dark:text-blue-400",
           },
         ].map((card, idx) => (

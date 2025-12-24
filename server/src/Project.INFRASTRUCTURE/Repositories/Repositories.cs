@@ -249,6 +249,16 @@ public class InvitationRepository : Repository<Invitation>, IInvitationRepositor
                 (projectId == null || i.ProjectId == projectId));
     }
     
+    public override async Task<Invitation?> GetByIdAsync(string id)
+    {
+        return await _context.Invitations
+            .Include(i => i.Workspace)
+            .Include(i => i.Project)
+            .Include(i => i.InvitedBy)
+            .Where(i => i.Id == id)
+            .FirstOrDefaultAsync();
+    }
+    
     public async Task<IEnumerable<Invitation>> GetUserInvitationsAsync(string email)
     {
         return await _context.Invitations
@@ -276,5 +286,51 @@ public class InvitationRepository : Repository<Invitation>, IInvitationRepositor
             .Where(i => i.ProjectId == projectId)
             .OrderByDescending(i => i.CreatedAt)
             .ToListAsync();
+    }
+}
+
+// Comment Repository - Include User for each comment
+public class CommentRepository : Repository<Comment>
+{
+    public CommentRepository(ApplicationDbContext context) : base(context) { }
+    
+    public override async Task<IEnumerable<Comment>> GetAllAsync()
+    {
+        return await _context.Comments
+            .Include(c => c.User)
+            .ToListAsync();
+    }
+    
+    public override async Task<Comment?> GetByIdAsync(string id)
+    {
+        return await _context.Comments
+            .Include(c => c.User)
+            .FirstOrDefaultAsync(c => c.Id == id);
+    }
+}
+
+// Note Repository - Include User for each note
+public class NoteRepository : Repository<Note>
+{
+    public NoteRepository(ApplicationDbContext context) : base(context) { }
+    
+    public override async Task<IEnumerable<Note>> GetAllAsync()
+    {
+        return await _context.Notes
+            .Include(n => n.User)
+            .Include(n => n.Mentions)
+                .ThenInclude(m => m.MentionedUser)
+            .Include(n => n.Attachments)
+            .ToListAsync();
+    }
+    
+    public override async Task<Note?> GetByIdAsync(string id)
+    {
+        return await _context.Notes
+            .Include(n => n.User)
+            .Include(n => n.Mentions)
+                .ThenInclude(m => m.MentionedUser)
+            .Include(n => n.Attachments)
+            .FirstOrDefaultAsync(n => n.Id == id);
     }
 }
